@@ -9,6 +9,7 @@
 	<property name="dir.website" location="${basedir}/website" />
 	<property name="dir.installer" location="${basedir}/installer" />
 	<property name="dir.cache" location="${basedir}/cache" />
+	<property environment="env" />
 
 	<!-- import property files -->
 	<property file="${basedir}/profile.properties" />
@@ -19,7 +20,13 @@
 	<property name="dir.release.index" location="${basedir}/release" />
 	<property name="dir.release" location="${dir.release.index}/${release}" />
 
-	<!-- define javafx version number based on app.properties -->
+	<!-- define javafx module path -->
+	<condition property="jfx.path" value="${env.JAVAFX_LIB}">
+		<isset property="env.JAVAFX_LIB" />
+	</condition>
+	<condition property="jfx.path" value="/opt/homebrew/opt/openjfx/lib">
+		<available file="/opt/homebrew/opt/openjfx/lib" type="dir" />
+	</condition>
 	<property name="jfx.path" location="${basedir}/cache/javafx-sdk-${jfx.version}/lib" />
 
 	<!-- timestamp variables -->
@@ -312,7 +319,7 @@
 	</macrodef>
 
 
-	<target name="jar" depends="revision, OS-Test">
+	<target name="jar" depends="revision">
 		<!-- add missing slf4j-api file -->
     <copy file="${basedir}/cache/slf4j-api.jar" todir="${basedir}/lib/ivy/jar" />
 
@@ -330,6 +337,7 @@
 		<path id="jar.classpath">
 			<fileset dir="${dir.dist}/lib">
 				<include name="*.jar" />
+				<exclude name="${package.name}.jar" />
 			</fileset>
 		</path>
 		<manifestclasspath property="jar.classpath" jarfile="${dir.dist}/lib/${package.name}.jar">

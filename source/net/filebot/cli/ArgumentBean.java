@@ -114,6 +114,15 @@ public class ArgumentBean {
 	@Option(name = "--def", usage = "Define script variables", handler = BindingsHandler.class)
 	public Map<String, String> defines = new LinkedHashMap<String, String>();
 
+	@Option(name = "--config", usage = "Runtime config file", metaVar = "config.properties")
+	public String config;
+
+	@Option(name = "--data-source", usage = "Data mirror base path or URL", metaVar = "/path/to/data or https://host/data")
+	public String dataSource;
+
+	@Option(name = "--provider-order", usage = "Preferred provider order", metaVar = "TheMovieDB::TV,TVmaze,TheTVDB")
+	public String providerOrder;
+
 	@Option(name = "-r", usage = "Recursively process folders")
 	public boolean recursive = false;
 
@@ -262,11 +271,49 @@ public class ArgumentBean {
 	}
 
 	public Datasource getDatasource() {
-		return db == null ? null : WebServices.getService(db);
+		if (db == null) {
+			return null;
+		}
+
+		Datasource service = WebServices.getService(db);
+		if (service == null) {
+			throw new CmdlineException("Unsupported database: " + db);
+		}
+
+		if (!service.isEnabled()) {
+			throw new CmdlineException(String.format("Database [%s] is disabled: %s", db, service.getStatusMessage()));
+		}
+
+		return service;
 	}
 
 	public EpisodeListProvider getEpisodeListProvider() {
-		return db == null ? WebServices.TheTVDB : WebServices.getEpisodeListProvider(db); // default to TheTVDB if --db is not set
+		if (db == null) {
+			return WebServices.getDefaultEpisodeListProvider();
+		}
+
+		EpisodeListProvider provider = WebServices.getEpisodeListProvider(db);
+		if (provider == null) {
+			throw new CmdlineException("Unsupported episode database: " + db);
+		}
+
+		if (!provider.isEnabled()) {
+			throw new CmdlineException(String.format("Database [%s] is disabled: %s", db, provider.getStatusMessage()));
+		}
+
+		return provider;
+	}
+
+	public String getConfigPath() {
+		return config == null || config.isEmpty() ? null : config;
+	}
+
+	public String getDataSource() {
+		return dataSource == null || dataSource.isEmpty() ? null : dataSource;
+	}
+
+	public String getProviderOrder() {
+		return providerOrder == null || providerOrder.isEmpty() ? null : providerOrder;
 	}
 
 	public String getSearchQuery() {

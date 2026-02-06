@@ -119,10 +119,10 @@ public class CmdlineOperations implements CmdlineInterface {
 						results.addAll(renameMovie(it.getValue(), action, conflict, output, format, TheMovieDB, query, filter, locale, strict, exec));
 						break;
 					case Series:
-						results.addAll(renameSeries(it.getValue(), action, conflict, output, format, TheTVDB, query, order, filter, locale, strict, exec));
+						results.addAll(renameSeriesWithFallback(it.getValue(), action, conflict, output, format, query, order, filter, locale, strict, exec, getEpisodeListProviders()));
 						break;
 					case Anime:
-						results.addAll(renameSeries(it.getValue(), action, conflict, output, format, AniDB, query, order, filter, locale, strict, exec));
+						results.addAll(renameSeriesWithFallback(it.getValue(), action, conflict, output, format, query, order, filter, locale, strict, exec, concatEpisodeProviders(new EpisodeListProvider[] { AniDB }, getEpisodeListProviders())));
 						break;
 					case Music:
 						results.addAll(renameMusic(it.getValue(), action, conflict, output, format, asList(MediaInfoID3, AcoustID), exec)); // prefer existing ID3 tags and use acoustid only when necessary
@@ -139,6 +139,39 @@ public class CmdlineOperations implements CmdlineInterface {
 		}
 
 		return results;
+	}
+
+	private List<File> renameSeriesWithFallback(Collection<File> files, RenameAction renameAction, ConflictAction conflictAction, File outputDir, ExpressionFileFormat format, String query, SortOrder sortOrder, ExpressionFilter filter, Locale locale, boolean strict, ExecCommand exec, EpisodeListProvider[] providers) throws Exception {
+		List<Exception> errors = new ArrayList<Exception>();
+
+		for (EpisodeListProvider provider : providers) {
+			if (provider == null || !provider.isEnabled()) {
+				continue;
+			}
+
+			try {
+				List<File> renamed = renameSeries(files, renameAction, conflictAction, outputDir, format, provider, query, sortOrder, filter, locale, strict, exec);
+				if (!renamed.isEmpty()) {
+					return renamed;
+				}
+			} catch (Exception e) {
+				errors.add(e);
+				log.warning(String.format("Provider [%s] failed: %s", provider.getIdentifier(), e.getMessage()));
+			}
+		}
+
+		if (!errors.isEmpty()) {
+			throw errors.get(errors.size() - 1);
+		}
+
+		throw new CmdlineException("Failed to match files to episode data with any enabled provider");
+	}
+
+	private EpisodeListProvider[] concatEpisodeProviders(EpisodeListProvider[] preferred, EpisodeListProvider[] defaults) {
+		LinkedHashSet<EpisodeListProvider> all = new LinkedHashSet<EpisodeListProvider>();
+		all.addAll(asList(preferred));
+		all.addAll(asList(defaults));
+		return all.toArray(new EpisodeListProvider[0]);
 	}
 
 	@Override

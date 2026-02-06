@@ -5,6 +5,7 @@ import static net.filebot.Logging.*;
 import static net.filebot.util.FileUtilities.*;
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -59,6 +60,10 @@ import net.filebot.util.ByteBufferOutputStream;
 public final class WebRequest {
 
 	private static final boolean LOG_RESPONSE_CONTENT = Boolean.parseBoolean(System.getProperty("net.filebot.web.WebRequest.log.response"));
+	private static final int CONNECT_TIMEOUT = Integer.getInteger("net.filebot.web.connect.timeout", 10_000);
+	private static final int READ_TIMEOUT = Integer.getInteger("net.filebot.web.read.timeout", 60_000);
+	private static final int RETRY_COUNT = Integer.getInteger("net.filebot.web.retry.count", 2);
+	private static final long RETRY_DELAY_MS = Long.getLong("net.filebot.web.retry.delay.ms", 500L);
 
 	private static final String ENCODING_GZIP = "gzip";
 	private static final String CHARSET_UTF8 = "UTF-8";
@@ -116,7 +121,11 @@ public final class WebRequest {
 	}
 
 	public static ByteBuffer fetch(URL url, long ifModifiedSince, Object etag, Map<String, String> requestParameters, Consumer<Map<String, List<String>>> responseParameters) throws IOException {
-		URLConnection connection = url.openConnection();
+		return withRetry(() -> fetchOnce(url, ifModifiedSince, etag, requestParameters, responseParameters));
+	}
+
+	private static ByteBuffer fetchOnce(URL url, long ifModifiedSince, Object etag, Map<String, String> requestParameters, Consumer<Map<String, List<String>>> responseParameters) throws IOException {
+		URLConnection connection = openConnection(url);
 
 		if (ifModifiedSince > 0) {
 			connection.setIfModifiedSince(ifModifiedSince);
@@ -180,7 +189,11 @@ public final class WebRequest {
 	}
 
 	public static ByteBuffer post(URL url, byte[] postData, String contentType, Map<String, String> requestParameters) throws IOException {
-		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+		return withRetry(() -> postOnce(url, postData, contentType, requestParameters));
+	}
+
+	private static ByteBuffer postOnce(URL url, byte[] postData, String contentType, Map<String, String> requestParameters) throws IOException {
+		HttpURLConnection connection = (HttpURLConnection) openConnection(url);
 
 		connection.addRequestProperty("Content-Length", String.valueOf(postData.length));
 		connection.addRequestProperty("Content-Type", contentType);
@@ -226,9 +239,11 @@ public final class WebRequest {
 	}
 
 	public static int head(URL url) throws IOException {
-		HttpURLConnection c = (HttpURLConnection) url.openConnection();
-		c.setRequestMethod("HEAD");
-		return c.getResponseCode();
+		return withRetry(() -> {
+			HttpURLConnection c = (HttpURLConnection) openConnection(url);
+			c.setRequestMethod("HEAD");
+			return c.getResponseCode();
+		});
 	}
 
 	public static String encodeParameters(Map<String, ?> parameters, boolean unicode) {
@@ -354,6 +369,44 @@ public final class WebRequest {
 			return "Received " + formatSize(data.remaining());
 		};
 
+	}
+
+	private static URLConnection openConnection(URL url) throws IOException {
+		URLConnection connection = url.openConnection();
+		connection.setConnectTimeout(CONNECT_TIMEOUT);
+		connection.setReadTimeout(READ_TIMEOUT);
+		return connection;
+	}
+
+	private static boolean isRetryable(IOException e) {
+		return !(e instanceof FileNotFoundException);
+	}
+
+	private static <T> T withRetry(NetworkCallable<T> call) throws IOException {
+		IOException error = null;
+		for (int attempt = 0; attempt <= RETRY_COUNT; attempt++) {
+			try {
+				return call.run();
+			} catch (IOException e) {
+				error = e;
+				if (!isRetryable(e) || attempt >= RETRY_COUNT) {
+					throw e;
+				}
+
+				try {
+					Thread.sleep(RETRY_DELAY_MS);
+				} catch (InterruptedException interrupted) {
+					Thread.currentThread().interrupt();
+					throw new IOException("Interrupted while waiting for retry", interrupted);
+				}
+			}
+		}
+		throw error == null ? new IOException("Request failed without explicit error") : error;
+	}
+
+	@FunctionalInterface
+	private interface NetworkCallable<T> {
+		T run() throws IOException;
 	}
 
 	private WebRequest() {

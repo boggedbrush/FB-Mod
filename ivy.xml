@@ -8,8 +8,8 @@
 		<dependency rev="2.33" org="args4j" name="args4j" />
 		<dependency rev="2.10.5" org="net.sf.ehcache" name="ehcache" />
 		<dependency rev="27.0.1-jre" org="com.google.guava" name="guava" />
-		<dependency rev="2.6.2" org="com.github.ben-manes.caffeine" name="caffeine" />
-		<dependency rev="4.1.1" org="com.github.mpkorstanje" name="simmetrics-core" />
+		<dependency rev="2.6.2" org="com.github.ben-manes.caffeine" name="caffeine" transitive="false" />
+		<dependency rev="4.1.1" org="com.github.mpkorstanje" name="simmetrics-core" transitive="false" />
 		<dependency rev="61.1" org="com.ibm.icu" name="icu4j" />
 		<dependency rev="1.11.3" org="org.jsoup" name="jsoup" />
 		<dependency rev="1.8" org="org.tukaani" name="xz" />
@@ -20,7 +20,7 @@
 		<dependency rev="1.7.25" org="org.slf4j" name="slf4j-jdk14" />
 		<dependency rev="1.10.0" org="net.java.dev.glazedlists" name="glazedlists_java16" />
 		<dependency rev="5.2" org="com.miglayout" name="miglayout-swing" />
-		<dependency rev="2.2" org="org.apache.commons" name="commons-vfs2" />
+		<dependency rev="2.2" org="org.apache.commons" name="commons-vfs2" transitive="false" />
 		<dependency rev="3.1.0" org="com.github.junrar" name="junrar" />
 		<dependency rev="3.0.0" org="com.fifesoft" name="rsyntaxtextarea" />
 		<dependency rev="3.0.0" org="com.fifesoft" name="autocomplete" />
@@ -40,17 +40,17 @@
 
 
 		<!-- Apache Groovy -->
-		<dependency rev="2.5.6" org="org.codehaus.groovy" name="groovy" />
-		<dependency rev="2.5.6" org="org.codehaus.groovy" name="groovy-jsr223" />
-		<dependency rev="2.5.6" org="org.codehaus.groovy" name="groovy-ant" />
-		<dependency rev="2.5.6" org="org.codehaus.groovy" name="groovy-json" />
-		<dependency rev="2.5.6" org="org.codehaus.groovy" name="groovy-xml" />
-		<dependency rev="2.5.6" org="org.codehaus.groovy" name="groovy-datetime" />
-		<dependency rev="2.5.6" org="org.codehaus.groovy" name="groovy-dateutil" />
-		<dependency rev="2.5.6" org="org.codehaus.groovy" name="groovy-templates" />
-		<dependency rev="2.5.6" org="org.codehaus.groovy" name="groovy-nio" />
-		<dependency rev="2.5.6" org="org.codehaus.groovy" name="groovy-swing" />
-		<dependency rev="2.5.6" org="org.codehaus.groovy" name="groovy-groovydoc" />
+		<dependency rev="2.5.23" org="org.codehaus.groovy" name="groovy" />
+		<dependency rev="2.5.23" org="org.codehaus.groovy" name="groovy-jsr223" />
+		<dependency rev="2.5.23" org="org.codehaus.groovy" name="groovy-ant" />
+		<dependency rev="2.5.23" org="org.codehaus.groovy" name="groovy-json" />
+		<dependency rev="2.5.23" org="org.codehaus.groovy" name="groovy-xml" />
+		<dependency rev="2.5.23" org="org.codehaus.groovy" name="groovy-datetime" />
+		<dependency rev="2.5.23" org="org.codehaus.groovy" name="groovy-dateutil" />
+		<dependency rev="2.5.23" org="org.codehaus.groovy" name="groovy-templates" />
+		<dependency rev="2.5.23" org="org.codehaus.groovy" name="groovy-nio" />
+		<dependency rev="2.5.23" org="org.codehaus.groovy" name="groovy-swing" />
+		<dependency rev="2.5.23" org="org.codehaus.groovy" name="groovy-groovydoc" />
 
 
 		<!-- Apache Ant -->

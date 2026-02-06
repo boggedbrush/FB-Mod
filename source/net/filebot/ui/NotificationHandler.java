@@ -32,7 +32,7 @@ public class NotificationHandler extends Handler {
 		this.manager = manager;
 
 		setFormatter(new SimpleMessageFormatter());
-		setLevel(Level.INFO);
+		setLevel(Level.WARNING);
 	}
 
 	@Override
@@ -41,18 +41,32 @@ public class NotificationHandler extends Handler {
 		if (GraphicsEnvironment.isHeadless())
 			return;
 
+		if (!isLoggable(record))
+			return;
+
 		String message = getFormatter().format(record);
 		Level level = record.getLevel();
+		if (isSuppressed(level, message))
+			return;
 
 		SwingUtilities.invokeLater(() -> {
-			if (level == Level.INFO) {
-				show(message, ResourceManager.getIcon("message.info"), timeout * 1);
-			} else if (level == Level.WARNING) {
+			if (level == Level.WARNING) {
 				show(message, ResourceManager.getIcon("message.warning"), timeout * 2);
 			} else if (level == Level.SEVERE) {
 				show(message, ResourceManager.getIcon("message.error"), timeout * 3);
 			}
 		});
+	}
+
+	private boolean isSuppressed(Level level, String message) {
+		if (message == null)
+			return false;
+
+		// Bundled-key notices are expected for personal-use defaults and should not be shown as modal-like popups.
+		if (level == Level.WARNING && message.startsWith("Using bundled API key for ["))
+			return true;
+
+		return false;
 	}
 
 	protected void show(String message, Icon icon, int timeout) {

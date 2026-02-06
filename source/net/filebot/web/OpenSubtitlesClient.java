@@ -66,7 +66,12 @@ public class OpenSubtitlesClient implements SubtitleProvider, VideoHashSubtitleS
 
 	@Override
 	public URI getLink() {
-		return URI.create("http://www.opensubtitles.org");
+		return URI.create("https://www.opensubtitles.org");
+	}
+
+	@Override
+	public boolean requiresAuthentication() {
+		return true;
 	}
 
 	public synchronized void setUser(String username, String password_md5) {
@@ -363,7 +368,7 @@ public class OpenSubtitlesClient implements SubtitleProvider, VideoHashSubtitleS
 
 	@Override
 	public URI getSubtitleListLink(SubtitleSearchResult searchResult, Locale locale) {
-		return URI.create(String.format("http://www.opensubtitles.org/en/search/imdbid-%d/sublanguageid-%s", searchResult.getImdbId(), getSubLanguageID(locale)));
+		return URI.create(String.format("https://www.opensubtitles.org/en/search/imdbid-%d/sublanguageid-%s", searchResult.getImdbId(), getSubLanguageID(locale)));
 	}
 
 	public synchronized Locale detectLanguage(byte[] data) throws Exception {

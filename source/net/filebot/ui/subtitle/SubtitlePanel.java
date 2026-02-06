@@ -298,9 +298,9 @@ public class SubtitlePanel extends AbstractSearchPanel<SubtitleProvider, Subtitl
 			// osdbPass.setText(osdbAuth[1]); // password is stored as MD5 hash so we can't restore it
 
 			if (osdbUser.getText().isEmpty()) {
-				osdbGroup.add(new LinkButton("Register Account", "Register to increase your download quota", WebServices.OpenSubtitles.getIcon(), URI.create("http://www.opensubtitles.org/en/newuser")), "spanx 2, tag left");
+				osdbGroup.add(new LinkButton("Register Account", "Register to increase your download quota", WebServices.OpenSubtitles.getIcon(), URI.create("https://www.opensubtitles.org/en/newuser")), "spanx 2, tag left");
 			} else {
-				osdbGroup.add(new LinkButton("Upgrade Account", "Upgrade to increase your download quota", WebServices.OpenSubtitles.getIcon(), URI.create("http://www.opensubtitles.org/en/support")), "spanx 2, tag left");
+				osdbGroup.add(new LinkButton("Upgrade Account", "Upgrade to increase your download quota", WebServices.OpenSubtitles.getIcon(), URI.create("https://www.opensubtitles.org/en/support")), "spanx 2, tag left");
 			}
 
 			JRootPane container = authPanel.getRootPane();

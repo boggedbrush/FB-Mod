@@ -48,11 +48,13 @@ public final class Settings {
 	}
 
 	public static String getApplicationProperty(String key) {
-		return ResourceBundle.getBundle(Settings.class.getName(), Locale.ROOT).getString(key);
+		String fallback = ResourceBundle.getBundle(Settings.class.getName(), Locale.ROOT).getString(key);
+		return RuntimeConfiguration.getApplicationProperty(key, fallback);
 	}
 
 	public static String getApiKey(String name) {
-		return getApplicationProperty("apikey." + name);
+		String fallback = getApplicationProperty("apikey." + name);
+		return RuntimeConfiguration.getApiKey(name, fallback);
 	}
 
 	public static boolean isUnixFS() {

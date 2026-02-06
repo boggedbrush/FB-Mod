@@ -27,7 +27,12 @@ public enum ScriptSource {
 
 		@Override
 		public ScriptProvider getScriptProvider(String input) throws Exception {
-			URI resource = new URI(getApplicationProperty("github.stable"));
+			String stable = getApplicationProperty("github.stable");
+			if (stable == null || stable.trim().isEmpty()) {
+				throw new CmdlineException("fn: scripts are disabled. Configure github.stable or use --data-source.");
+			}
+
+			URI resource = new URI(stable);
 			Resource<byte[]> bundle = getCache().bytes(resource, URI::toURL, XZInputStream::new).expire(Cache.ONE_WEEK);
 
 			return new ScriptBundle(bundle, getClass().getResourceAsStream("repository.cer"));

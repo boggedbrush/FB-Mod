@@ -21,3 +21,7 @@ profile.properties
 .externalToolBuilders
 
 .DS_Store
+
+# local tooling artifacts
+artifacts/logs/
+cache/javafx-sdk-*/

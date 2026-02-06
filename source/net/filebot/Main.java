@@ -60,6 +60,8 @@ public class Main {
 		try {
 			// parse arguments
 			ArgumentBean args = ArgumentBean.parse(argv);
+			RuntimeConfiguration.configure(args);
+			logStartupDiagnostics(args);
 
 			// just print help message or version string and then exit
 			if (args.printHelp()) {
@@ -105,11 +107,15 @@ public class Main {
 			setApplicationArguments(args);
 
 			// update system properties
+			log.info("Initialize system properties");
 			initializeSystemProperties(args);
+			log.info("Initialize logging");
 			initializeLogging(args);
 
 			// initialize this stuff before anything else
+			log.info("Initialize cache manager");
 			CacheManager.getInstance();
+			log.info("Initialize security manager");
 			initializeSecurityManager();
 
 			// initialize history spooler
@@ -153,10 +159,14 @@ public class Main {
 					debug.log(Level.WARNING, "Failed to restore preferences", e);
 				}
 
-				startUserInterface(args);
+				try {
+					startUserInterface(args);
 
-				// run background tasks
-				newSwingWorker(() -> onStart(args)).execute();
+					// run background tasks
+					newSwingWorker(() -> onStart(args)).execute();
+				} catch (Throwable e) {
+					debug.log(Level.SEVERE, "Failed to initialize user interface", e);
+				}
 			});
 		} catch (CmdLineException e) {
 			// illegal arguments => print CLI error message
@@ -170,9 +180,12 @@ public class Main {
 	}
 
 	private static void onStart(ArgumentBean args) throws Exception {
+		log.info("Startup background tasks begin");
+
 		// publish file arguments
 		List<File> files = args.getFiles(false);
 		if (files.size() > 0) {
+			log.info("Publishing startup file arguments: " + files.size());
 			SwingEventBus.getInstance().post(new FileTransferable(files));
 		}
 
@@ -190,6 +203,7 @@ public class Main {
 
 		// JavaFX is used for ProgressMonitor and GettingStartedDialog
 		try {
+			log.info("Initialize JavaFX toolkit");
 			initJavaFX();
 		} catch (Throwable e) {
 			log.log(Level.SEVERE, "Failed to initialize JavaFX", e);
@@ -203,6 +217,8 @@ public class Main {
 				debug.log(Level.WARNING, "Failed to show Getting Started help", e);
 			}
 		}
+
+		log.info("Startup background tasks done");
 
 		// check for application updates
 	/*	if (!"skip".equals(System.getProperty("application.update"))) {
@@ -220,6 +236,7 @@ public class Main {
 
 		// start standard frame or single panel frame
 		PanelBuilder[] panels = args.getPanelBuilders();
+		log.info("Initialize UI panels: " + stream(panels).map(PanelBuilder::getName).collect(joining(", ")));
 
 		// MAS does not allow subtitle applications
 		if (isMacSandbox()) {
@@ -272,6 +289,7 @@ public class Main {
 		// start application
 		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		frame.setVisible(true);
+		log.info("Main window is visible");
 	}
 
 	/**
@@ -358,6 +376,12 @@ public class Main {
 	 * Initialize default SecurityManager and grant all permissions via security policy. Initialization is required in order to run {@link ExpressionFormat} in a secure sandbox.
 	 */
 	private static void initializeSecurityManager() {
+		// java.lang.SecurityManager is deprecated for removal and emits unavoidable runtime warnings on modern JDKs
+		if (Runtime.version().feature() >= 17) {
+			debug.fine("Skipping legacy security manager initialization on Java " + Runtime.version().feature());
+			return;
+		}
+
 		try {
 			// initialize security policy used by the default security manager
 			// because default the security policy is very restrictive (e.g. no
@@ -380,9 +404,25 @@ public class Main {
 
 			// set default security manager
 			System.setSecurityManager(new SecurityManager());
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			// security manager was probably set via system property
-			debug.log(Level.WARNING, e.getMessage(), e);
+			debug.log(Level.WARNING, "Security manager unavailable; expression sandbox will run without legacy security manager", e);
+		}
+	}
+
+	private static void logStartupDiagnostics(ArgumentBean args) {
+		log.info(String.format("Starting %s", getApplicationIdentifier()));
+		log.info(String.format("Runtime: %s / %s", getJavaRuntimeIdentifier(), getSystemIdentifier()));
+		log.info("Arguments: " + args);
+
+		String configPath = System.getProperty("net.filebot.config.path");
+		if (configPath != null && !configPath.isEmpty()) {
+			log.info("Runtime config: " + configPath);
+		}
+
+		String dataSource = System.getProperty("url.data.source");
+		if (dataSource != null && !dataSource.isEmpty()) {
+			log.info("Data source override: " + dataSource);
 		}
 	}
 

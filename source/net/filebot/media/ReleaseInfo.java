@@ -15,6 +15,7 @@ import static net.filebot.util.StringUtilities.*;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.net.URI;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.text.Collator;
@@ -497,7 +498,7 @@ public class ReleaseInfo {
 	protected <A> Resource<A[]> resource(String name, Duration expirationTime, Function<String, A> parse, IntFunction<A[]> generator) {
 		return () -> {
 			Cache cache = Cache.getCache("data", CacheType.Persistent);
-			byte[] bytes = cache.bytes(name, n -> new URL(getProperty(n)), XZInputStream::new).expire(refreshDuration.optional().orElse(expirationTime)).get();
+			byte[] bytes = cache.bytes(name, n -> getResourceURL(getProperty(n)), XZInputStream::new).expire(refreshDuration.optional().orElse(expirationTime)).get();
 
 			// all data files are UTF-8 encoded XZ compressed text files
 			Stream<String> lines = NEWLINE.splitAsStream(UTF_8.decode(ByteBuffer.wrap(bytes)));
@@ -507,9 +508,48 @@ public class ReleaseInfo {
 	}
 
 	protected String getProperty(String name) {
-		// override resource locations via Java System properties
-		return System.getProperty(name, getBundle(ReleaseInfo.class.getName()).getString(name));
+		String explicit = System.getProperty(name);
+		if (explicit != null && explicit.length() > 0) {
+			return explicit;
+		}
+
+		String dataSource = System.getProperty("url.data.source");
+		if (dataSource != null && !dataSource.trim().isEmpty() && DATA_FILES.containsKey(name)) {
+			return resolveDataSource(dataSource, DATA_FILES.get(name));
+		}
+
+		return getBundle(ReleaseInfo.class.getName()).getString(name);
 	}
+
+	protected URL getResourceURL(String location) throws Exception {
+		try {
+			URI uri = new URI(location);
+			if (uri.isAbsolute()) {
+				return uri.toURL();
+			}
+		} catch (Exception e) {
+			// fall through and resolve as local file path
+		}
+		return new File(location).toURI().toURL();
+	}
+
+	protected String resolveDataSource(String base, String fileName) {
+		String normalized = fileName.startsWith("/") ? fileName.substring(1) : fileName;
+		if (base.contains("://")) {
+			return URI.create(base.endsWith("/") ? base : base + '/').resolve(normalized).toString();
+		}
+		return new File(base, normalized).toURI().toString();
+	}
+
+	private static final Map<String, String> DATA_FILES = Stream.of(new String[][] {
+			{ "url.release-groups", "release-groups.txt.xz" },
+			{ "url.query-blacklist", "query-blacklist.txt.xz" },
+			{ "url.series-mappings", "series-mappings.txt.xz" },
+			{ "url.movie-list", "moviedb.txt.xz" },
+			{ "url.thetvdb-index", "thetvdb.txt.xz" },
+			{ "url.anidb-index", "anidb.txt.xz" },
+			{ "url.osdb-index", "osdb.txt.xz" },
+	}).collect(toMap(v -> v[0], v -> v[1]));
 
 	public static class FolderEntryFilter implements FileFilter {
 

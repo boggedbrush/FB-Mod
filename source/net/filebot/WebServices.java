@@ -20,6 +20,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
+import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
 import net.filebot.media.LocalDatasource;
@@ -72,20 +73,35 @@ public final class WebServices {
 	public static final AcoustIDClient AcoustID = new AcoustIDClient(getApiKey("acoustid"));
 	public static final ID3Lookup MediaInfoID3 = new ID3Lookup();
 
+	private static final EpisodeListProvider[] DEFAULT_EPISODE_LIST_PROVIDERS = new EpisodeListProvider[] { TheMovieDB_TV, TVmaze, TheTVDB, AniDB };
+	private static final MovieIdentificationService[] DEFAULT_MOVIE_IDENTIFICATION_SERVICES = new MovieIdentificationService[] { TheMovieDB, OMDb };
+	private static final MusicIdentificationService[] DEFAULT_MUSIC_IDENTIFICATION_SERVICES = new MusicIdentificationService[] { MediaInfoID3, AcoustID };
+
 	public static Datasource[] getServices() {
-		return new Datasource[] { TheMovieDB, OMDb, TheTVDB, AniDB, TheMovieDB_TV, TVmaze, AcoustID, MediaInfoID3, LocalDatasource.EXIF, LocalDatasource.XATTR, LocalDatasource.FILE, OpenSubtitles, Shooter, FanartTV };
+		Datasource[] ordered = concat(DEFAULT_MOVIE_IDENTIFICATION_SERVICES, DEFAULT_EPISODE_LIST_PROVIDERS, DEFAULT_MUSIC_IDENTIFICATION_SERVICES, getLocalDatasources(), new Datasource[] { OpenSubtitles, Shooter, FanartTV });
+		return stream(ordered).distinct().toArray(Datasource[]::new);
 	}
 
 	public static MovieIdentificationService[] getMovieIdentificationServices() {
-		return new MovieIdentificationService[] { TheMovieDB, OMDb };
+		return orderByPreference("net.filebot.provider.order", DEFAULT_MOVIE_IDENTIFICATION_SERVICES, MovieIdentificationService[]::new);
 	}
 
 	public static EpisodeListProvider[] getEpisodeListProviders() {
-		return new EpisodeListProvider[] { TheTVDB, AniDB, TheMovieDB_TV, TVmaze };
+		return orderByPreference("net.filebot.provider.order", DEFAULT_EPISODE_LIST_PROVIDERS, EpisodeListProvider[]::new);
+	}
+
+	public static EpisodeListProvider getDefaultEpisodeListProvider() {
+		EpisodeListProvider[] providers = getEpisodeListProviders();
+		if (providers.length > 0) {
+			return providers[0];
+		}
+
+		RuntimeConfiguration.warnLegacyProperty("provider.order.empty", "No enabled episode providers available; falling back to TheMovieDB::TV");
+		return TheMovieDB_TV;
 	}
 
 	public static MusicIdentificationService[] getMusicIdentificationServices() {
-		return new MusicIdentificationService[] { AcoustID, MediaInfoID3 };
+		return orderByPreference("net.filebot.provider.order", DEFAULT_MUSIC_IDENTIFICATION_SERVICES, MusicIdentificationService[]::new);
 	}
 
 	public static LocalDatasource[] getLocalDatasources() {
@@ -93,15 +109,15 @@ public final class WebServices {
 	}
 
 	public static SubtitleProvider[] getSubtitleProviders(Locale locale) {
-		return new SubtitleProvider[] { OpenSubtitles };
+		return stream(new SubtitleProvider[] { OpenSubtitles }).filter(Datasource::isEnabled).toArray(SubtitleProvider[]::new);
 	}
 
 	public static VideoHashSubtitleService[] getVideoHashSubtitleServices(Locale locale) {
 		switch (locale.getLanguage()) {
 		case "zh":
-			return new VideoHashSubtitleService[] { OpenSubtitles, Shooter }; // special support for 射手网 for Chinese language subtitles
+			return stream(new VideoHashSubtitleService[] { OpenSubtitles, Shooter }).filter(d -> ((Datasource) d).isEnabled()).toArray(VideoHashSubtitleService[]::new); // special support for 射手网 for Chinese language subtitles
 		default:
-			return new VideoHashSubtitleService[] { OpenSubtitles };
+			return stream(new VideoHashSubtitleService[] { OpenSubtitles }).filter(d -> ((Datasource) d).isEnabled()).toArray(VideoHashSubtitleService[]::new);
 		}
 	}
 
@@ -110,21 +126,43 @@ public final class WebServices {
 	}
 
 	public static EpisodeListProvider getEpisodeListProvider(String name) {
-		return getService(name, getEpisodeListProviders());
+		return getService(name, DEFAULT_EPISODE_LIST_PROVIDERS);
 	}
 
 	public static MovieIdentificationService getMovieIdentificationService(String name) {
-		return getService(name, getMovieIdentificationServices());
+		return getService(name, DEFAULT_MOVIE_IDENTIFICATION_SERVICES);
 	}
 
 	public static MusicIdentificationService getMusicIdentificationService(String name) {
-		return getService(name, getMusicIdentificationServices());
+		return getService(name, DEFAULT_MUSIC_IDENTIFICATION_SERVICES);
 	}
 
 	public static <T extends Datasource> T getService(String name, T... services) {
-		return stream(services).filter(it -> {
-			return it.getIdentifier().equalsIgnoreCase(name);
-		}).findFirst().orElse(null);
+		return stream(services).filter(it -> it.getIdentifier().equalsIgnoreCase(name) || it.getName().equalsIgnoreCase(name)).findFirst().orElse(null);
+	}
+
+	private static <T extends Datasource> T[] orderByPreference(String property, T[] defaults, IntFunction<T[]> generator) {
+		Map<String, T> providers = new LinkedHashMap<>();
+		stream(defaults).forEach(s -> providers.put(s.getIdentifier().toLowerCase(Locale.ROOT), s));
+
+		LinkedHashSet<T> ordered = new LinkedHashSet<>();
+		String configured = System.getProperty(property, "");
+
+		if (!configured.trim().isEmpty()) {
+			stream(configured.split("\\s*,\\s*")).filter(s -> !s.isEmpty()).forEach(name -> {
+				T provider = providers.get(name.toLowerCase(Locale.ROOT));
+				if (provider != null) {
+					ordered.add(provider);
+				}
+			});
+		}
+
+		stream(defaults).forEach(ordered::add);
+		return ordered.stream().filter(Datasource::isEnabled).toArray(generator);
+	}
+
+	private static Datasource[] concat(Datasource[]... sources) {
+		return stream(sources).flatMap(a -> stream(a)).toArray(Datasource[]::new);
 	}
 
 	public static final ExecutorService requestThreadPool = Executors.newCachedThreadPool();
@@ -261,8 +299,10 @@ public final class WebServices {
 	 * Initialize client settings from system properties
 	 */
 	static {
-		String[] osdbLogin = getLogin(LOGIN_OPENSUBTITLES);
-		OpenSubtitles.setUser(osdbLogin[0], osdbLogin[1]);
+		if (OpenSubtitles.isEnabled()) {
+			String[] osdbLogin = getLogin(LOGIN_OPENSUBTITLES);
+			OpenSubtitles.setUser(osdbLogin[0], osdbLogin[1]);
+		}
 	}
 
 	public static String[] getLogin(String key) {

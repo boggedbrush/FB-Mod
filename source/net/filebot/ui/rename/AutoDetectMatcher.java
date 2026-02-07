@@ -37,8 +37,10 @@ class AutoDetectMatcher implements AutoCompleteMatcher {
 	private AutoCompleteMatcher music = new MusicMatcher(MediaInfoID3, AcoustID);
 
 	@Override
-	public List<Match<File, ?>> match(Collection<File> files, boolean strict, SortOrder order, Locale locale, boolean autodetection, Component parent) throws Exception {
-		// can't use parallel stream because default fork/join pool doesn't play well with the security manager
+	public List<Match<File, ?>> match(Collection<File> files, boolean strict, SortOrder order, Locale locale,
+			boolean autodetection, Component parent) throws Exception {
+		// can't use parallel stream because default fork/join pool doesn't play well
+		// with the security manager
 		ExecutorService workerThreadPool = Executors.newFixedThreadPool(getPreferredThreadPoolSize());
 
 		try {
@@ -48,7 +50,8 @@ class AutoDetectMatcher implements AutoCompleteMatcher {
 			List<Future<List<Match<File, ?>>>> matches = groups.entrySet().stream().filter(it -> {
 				return it.getKey().types().length == 1; // unambiguous group
 			}).map(it -> {
-				return workerThreadPool.submit(() -> match(it.getKey(), it.getValue(), strict, order, locale, autodetection, parent));
+				return workerThreadPool
+						.submit(() -> match(it.getKey(), it.getValue(), strict, order, locale, autodetection, parent));
 			}).collect(toList());
 
 			// collect results
@@ -63,12 +66,14 @@ class AutoDetectMatcher implements AutoCompleteMatcher {
 					return Stream.empty();
 				}
 			}).sorted(comparing(Match::getValue, OriginalOrder.of(files))).collect(toList());
+
 		} finally {
 			workerThreadPool.shutdownNow();
 		}
 	}
 
-	private List<Match<File, ?>> match(Group group, Collection<File> files, boolean strict, SortOrder order, Locale locale, boolean autodetection, Component parent) throws Exception {
+	private List<Match<File, ?>> match(Group group, Collection<File> files, boolean strict, SortOrder order,
+			Locale locale, boolean autodetection, Component parent) throws Exception {
 		AutoCompleteMatcher m = getMatcher(group);
 		if (m != null) {
 			return m.match(files, strict, order, locale, autodetection, parent);
@@ -79,14 +84,14 @@ class AutoDetectMatcher implements AutoCompleteMatcher {
 	private AutoCompleteMatcher getMatcher(Group group) {
 		for (Type key : group.types()) {
 			switch (key) {
-			case Movie:
-				return movie;
-			case Series:
-				return episode;
-			case Anime:
-				return anime;
-			case Music:
-				return music;
+				case Movie:
+					return movie;
+				case Series:
+					return episode;
+				case Anime:
+					return anime;
+				case Music:
+					return music;
 			}
 		}
 		return null;

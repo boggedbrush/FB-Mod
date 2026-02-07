@@ -110,17 +110,26 @@ public class RenamePanel extends JComponent {
 
 	protected final RenameAction renameAction = new RenameAction(renameModel);
 
-	private static final PreferencesEntry<String> persistentEpisodeFormat = Settings.forPackage(RenamePanel.class).entry("rename.format.episode");
-	private static final PreferencesEntry<String> persistentMovieFormat = Settings.forPackage(RenamePanel.class).entry("rename.format.movie");
-	private static final PreferencesEntry<String> persistentMusicFormat = Settings.forPackage(RenamePanel.class).entry("rename.format.music");
-	private static final PreferencesEntry<String> persistentFileFormat = Settings.forPackage(RenamePanel.class).entry("rename.format.file");
+	private static final PreferencesEntry<String> persistentEpisodeFormat = Settings.forPackage(RenamePanel.class)
+			.entry("rename.format.episode");
+	private static final PreferencesEntry<String> persistentMovieFormat = Settings.forPackage(RenamePanel.class)
+			.entry("rename.format.movie");
+	private static final PreferencesEntry<String> persistentMusicFormat = Settings.forPackage(RenamePanel.class)
+			.entry("rename.format.music");
+	private static final PreferencesEntry<String> persistentFileFormat = Settings.forPackage(RenamePanel.class)
+			.entry("rename.format.file");
 
-	private static final PreferencesEntry<String> persistentLastFormatState = Settings.forPackage(RenamePanel.class).entry("rename.last.format.state").defaultValue(Mode.Episode.name());
-	private static final PreferencesEntry<String> persistentPreferredMatchMode = Settings.forPackage(RenamePanel.class).entry("rename.match.mode").defaultValue(MATCH_MODE_OPPORTUNISTIC);
-	private static final PreferencesEntry<String> persistentPreferredLanguage = Settings.forPackage(RenamePanel.class).entry("rename.language").defaultValue("en");
-	private static final PreferencesEntry<String> persistentPreferredEpisodeOrder = Settings.forPackage(RenamePanel.class).entry("rename.episode.order").defaultValue("Airdate");
+	private static final PreferencesEntry<String> persistentLastFormatState = Settings.forPackage(RenamePanel.class)
+			.entry("rename.last.format.state").defaultValue(Mode.Episode.name());
+	private static final PreferencesEntry<String> persistentPreferredMatchMode = Settings.forPackage(RenamePanel.class)
+			.entry("rename.match.mode").defaultValue(MATCH_MODE_OPPORTUNISTIC);
+	private static final PreferencesEntry<String> persistentPreferredLanguage = Settings.forPackage(RenamePanel.class)
+			.entry("rename.language").defaultValue("en");
+	private static final PreferencesEntry<String> persistentPreferredEpisodeOrder = Settings
+			.forPackage(RenamePanel.class).entry("rename.episode.order").defaultValue("Airdate");
 
-	private static final Map<String, Preset> persistentPresets = Settings.forPackage(RenamePanel.class).node("presets").asMap(Preset.class);
+	private static final Map<String, Preset> persistentPresets = Settings.forPackage(RenamePanel.class).node("presets")
+			.asMap(Preset.class);
 
 	public RenamePanel() {
 		namesList.setTitle("New Names");
@@ -134,14 +143,16 @@ public class RenamePanel extends JComponent {
 
 		try {
 			// restore custom episode formatter
-			renameModel.useFormatter(Episode.class, new ExpressionFormatter(persistentEpisodeFormat.getValue(), EpisodeFormat.SeasonEpisode, Episode.class));
+			renameModel.useFormatter(Episode.class, new ExpressionFormatter(persistentEpisodeFormat.getValue(),
+					EpisodeFormat.SeasonEpisode, Episode.class));
 		} catch (Exception e) {
 			// use default formatter
 		}
 
 		try {
 			// restore custom movie formatter
-			renameModel.useFormatter(Movie.class, new ExpressionFormatter(persistentMovieFormat.getValue(), MovieFormat.NameYear, Movie.class));
+			renameModel.useFormatter(Movie.class,
+					new ExpressionFormatter(persistentMovieFormat.getValue(), MovieFormat.NameYear, Movie.class));
 		} catch (Exception e) {
 			// use default movie formatter
 			renameModel.useFormatter(Movie.class, new MovieFormatter());
@@ -149,14 +160,16 @@ public class RenamePanel extends JComponent {
 
 		try {
 			// restore custom music formatter
-			renameModel.useFormatter(AudioTrack.class, new ExpressionFormatter(persistentMusicFormat.getValue(), new AudioTrackFormat(), AudioTrack.class));
+			renameModel.useFormatter(AudioTrack.class, new ExpressionFormatter(persistentMusicFormat.getValue(),
+					new AudioTrackFormat(), AudioTrack.class));
 		} catch (Exception e) {
 			// use default formatter
 		}
 
 		try {
 			// restore custom music formatter
-			renameModel.useFormatter(File.class, new ExpressionFormatter(persistentFileFormat.getValue(), new FileNameFormat(), File.class));
+			renameModel.useFormatter(File.class,
+					new ExpressionFormatter(persistentFileFormat.getValue(), new FileNameFormat(), File.class));
 		} catch (Exception e) {
 			// make sure to put File formatter at position 3
 			renameModel.useFormatter(File.class, new FileNameFormatter());
@@ -170,7 +183,8 @@ public class RenamePanel extends JComponent {
 		namesList.getListComponent().setCellRenderer(cellrenderer);
 		filesList.getListComponent().setCellRenderer(cellrenderer);
 
-		DefaultEventSelectionModel<Match<Object, File>> selectionModel = new DefaultEventSelectionModel<Match<Object, File>>(renameModel.matches());
+		DefaultEventSelectionModel<Match<Object, File>> selectionModel = new DefaultEventSelectionModel<Match<Object, File>>(
+				renameModel.matches());
 		selectionModel.setSelectionMode(ListSelection.SINGLE_SELECTION);
 
 		// use the same selection model for both lists to synchronize selection
@@ -299,10 +313,12 @@ public class RenamePanel extends JComponent {
 		setLayout(new MigLayout("fill, insets dialog, gapx 10px", "[fill][align center, pref!][fill]", "align 33%"));
 		add(new LoadingOverlayPane(filesList, filesList, "37px", "30px"), "grow, sizegroupx list");
 
-		BackgroundFileTransferablePolicy<?> transferablePolicy = (BackgroundFileTransferablePolicy<?>) filesList.getTransferablePolicy();
+		BackgroundFileTransferablePolicy<?> transferablePolicy = (BackgroundFileTransferablePolicy<?>) filesList
+				.getTransferablePolicy();
 		transferablePolicy.addPropertyChangeListener(evt -> {
 			if (BackgroundFileTransferablePolicy.LOADING_PROPERTY.equals(evt.getPropertyName())) {
-				filesList.firePropertyChange(LoadingOverlayPane.LOADING_PROPERTY, (boolean) evt.getOldValue(), (boolean) evt.getNewValue());
+				filesList.firePropertyChange(LoadingOverlayPane.LOADING_PROPERTY, (boolean) evt.getOldValue(),
+						(boolean) evt.getNewValue());
 			}
 		});
 
@@ -335,9 +351,11 @@ public class RenamePanel extends JComponent {
 						File file = (File) filesList.getListComponent().getModel().getElementAt(index);
 						Object object = namesList.getListComponent().getModel().getElementAt(index);
 
-						String string = showInputDialog("Enter Name:", object.toString(), "Enter Name", RenamePanel.this);
+						String string = showInputDialog("Enter Name:", object.toString(), "Enter Name",
+								RenamePanel.this);
 						if (string != null && string.length() > 0) {
-							renameModel.matches().set(index, new Match<Object, File>(string + '.' + getExtension(file), file));
+							renameModel.matches().set(index,
+									new Match<Object, File>(string + '.' + getExtension(file), file));
 						}
 					}
 				}
@@ -348,19 +366,20 @@ public class RenamePanel extends JComponent {
 		for (int presetNumber = 1; presetNumber <= 9; presetNumber++) {
 			int index = presetNumber - 1;
 
-			installAction(this, WHEN_IN_FOCUSED_WINDOW, getKeyStroke(Character.forDigit(presetNumber, 10), 0), newAction("Preset " + presetNumber, evt -> {
-				try {
-					List<Preset> presets = getPresets();
+			installAction(this, WHEN_IN_FOCUSED_WINDOW, getKeyStroke(Character.forDigit(presetNumber, 10), 0),
+					newAction("Preset " + presetNumber, evt -> {
+						try {
+							List<Preset> presets = getPresets();
 
-					if (index < presets.size()) {
-						new ApplyPresetAction(presets.get(index)).actionPerformed(evt);
-					} else {
-						new ShowPresetsPopupAction().actionPerformed(evt);
-					}
-				} catch (Exception e) {
-					debug.log(Level.WARNING, e, e::getMessage);
-				}
-			}));
+							if (index < presets.size()) {
+								new ApplyPresetAction(presets.get(index)).actionPerformed(evt);
+							} else {
+								new ShowPresetsPopupAction().actionPerformed(evt);
+							}
+						} catch (Exception e) {
+							debug.log(Level.WARNING, e, e::getMessage);
+						}
+					}));
 		}
 
 		// copy debug information (paths and objects)
@@ -396,9 +415,11 @@ public class RenamePanel extends JComponent {
 			Window window = getWindow(evt.getSource());
 
 			Action newPreset = newAction("New Preset …", ResourceManager.getIcon("script.add"), a -> {
-				Optional.ofNullable(JOptionPane.showInputDialog(window, "Preset Name:", a.getActionCommand(), JOptionPane.PLAIN_MESSAGE, null, null, "My Preset")).map(Object::toString).map(String::trim).filter(s -> s.length() > 0).ifPresent(n -> {
-					showPresetEditor(new Preset(n, null, null, null, null, null, null, null, null), window);
-				});
+				Optional.ofNullable(JOptionPane.showInputDialog(window, "Preset Name:", a.getActionCommand(),
+						JOptionPane.PLAIN_MESSAGE, null, null, "My Preset")).map(Object::toString).map(String::trim)
+						.filter(s -> s.length() > 0).ifPresent(n -> {
+							showPresetEditor(new Preset(n, null, null, null, null, null, null, null, null), window);
+						});
 			});
 
 			List<Object> options = new ArrayList<Object>(presets);
@@ -445,7 +466,8 @@ public class RenamePanel extends JComponent {
 
 		// create actions for match popup episode list completion
 		for (EpisodeListProvider db : WebServices.getEpisodeListProviders()) {
-			actionPopup.add(new AutoCompleteAction(db.getName(), db.getIcon(), () -> new EpisodeListMatcher(db, db == WebServices.AniDB)));
+			actionPopup.add(new AutoCompleteAction(db.getName(), db.getIcon(),
+					() -> new EpisodeListMatcher(db, db == WebServices.AniDB)));
 		}
 
 		actionPopup.addSeparator();
@@ -464,12 +486,14 @@ public class RenamePanel extends JComponent {
 
 		actionPopup.addSeparator();
 		actionPopup.addDescription("Smart Mode:");
-		actionPopup.add(new AutoCompleteAction("Autodetect", ResourceManager.getIcon("action.auto"), AutoDetectMatcher::new));
+		actionPopup.add(
+				new AutoCompleteAction("Autodetect", ResourceManager.getIcon("action.auto"), AutoDetectMatcher::new));
 
 		actionPopup.addSeparator();
 		actionPopup.addDescription("Options:");
 
-		actionPopup.add(newAction("Edit Format", ResourceManager.getIcon("action.format"), evt -> showFormatEditor(null)));
+		actionPopup
+				.add(newAction("Edit Format", ResourceManager.getIcon("action.format"), evt -> showFormatEditor(null)));
 
 		actionPopup.add(newAction("Preferences", ResourceManager.getIcon("action.preferences"), evt -> {
 			String[] modes = new String[] { MATCH_MODE_OPPORTUNISTIC, MATCH_MODE_STRICT };
@@ -484,7 +508,8 @@ public class RenamePanel extends JComponent {
 			languageList.setCellRenderer(new DefaultListCellRenderer() {
 
 				@Override
-				public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+				public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected,
+						boolean cellHasFocus) {
 					super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 					if (value != null) {
 						setText(((Language) value).getName());
@@ -500,16 +525,19 @@ public class RenamePanel extends JComponent {
 				orderCombo.setSelectedItem(SortOrder.forName(persistentPreferredEpisodeOrder.getValue()));
 
 				String selectedLanguage = persistentPreferredLanguage.getValue();
-				languages.stream().filter(l -> l.getCode().equals(selectedLanguage)).findFirst().ifPresent(l -> languageList.setSelectedValue(l, true));
+				languages.stream().filter(l -> l.getCode().equals(selectedLanguage)).findFirst()
+						.ifPresent(l -> languageList.setSelectedValue(l, true));
 			} catch (Exception e) {
 				debug.log(Level.WARNING, e.getMessage(), e);
 			}
 
-			JScrollPane spModeCombo = new JScrollPane(modeCombo, JScrollPane.VERTICAL_SCROLLBAR_NEVER, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+			JScrollPane spModeCombo = new JScrollPane(modeCombo, JScrollPane.VERTICAL_SCROLLBAR_NEVER,
+					JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 			spModeCombo.setBorder(new CompoundBorder(new TitledBorder("Match Mode"), spModeCombo.getBorder()));
 			JScrollPane spLanguageList = new JScrollPane(languageList);
 			spLanguageList.setBorder(new CompoundBorder(new TitledBorder("Language"), spLanguageList.getBorder()));
-			JScrollPane spOrderCombo = new JScrollPane(orderCombo, JScrollPane.VERTICAL_SCROLLBAR_NEVER, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+			JScrollPane spOrderCombo = new JScrollPane(orderCombo, JScrollPane.VERTICAL_SCROLLBAR_NEVER,
+					JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 			spOrderCombo.setBorder(new CompoundBorder(new TitledBorder("Episode Order"), spOrderCombo.getBorder()));
 
 			// fix background issues on OSX
@@ -565,7 +593,11 @@ public class RenamePanel extends JComponent {
 			} else if (binding.getInfoObject() instanceof File) {
 				return Mode.File;
 			} else {
-				throw new IllegalArgumentException("Cannot format class: " + binding.getInfoObjectType()); // ignore objects that cannot be formatted
+				throw new IllegalArgumentException("Cannot format class: " + binding.getInfoObjectType()); // ignore
+																											// objects
+																											// that
+																											// cannot be
+																											// formatted
 			}
 		}
 
@@ -580,28 +612,33 @@ public class RenamePanel extends JComponent {
 
 	private void showFormatEditor(MediaBindingBean binding) {
 		withWaitCursor(this, () -> {
-			FormatDialog dialog = new FormatDialog(getWindowAncestor(RenamePanel.this), getFormatEditorMode(binding), binding, binding != null);
+			FormatDialog dialog = new FormatDialog(getWindowAncestor(RenamePanel.this), getFormatEditorMode(binding),
+					binding, binding != null);
 			dialog.setLocation(getOffsetLocation(dialog.getOwner()));
 			dialog.setVisible(true);
 
 			if (dialog.submit()) {
 				switch (dialog.getMode()) {
-				case Episode:
-					renameModel.useFormatter(Episode.class, new ExpressionFormatter(dialog.getFormat().getExpression(), EpisodeFormat.SeasonEpisode, Episode.class));
-					persistentEpisodeFormat.setValue(dialog.getFormat().getExpression());
-					break;
-				case Movie:
-					renameModel.useFormatter(Movie.class, new ExpressionFormatter(dialog.getFormat().getExpression(), MovieFormat.NameYear, Movie.class));
-					persistentMovieFormat.setValue(dialog.getFormat().getExpression());
-					break;
-				case Music:
-					renameModel.useFormatter(AudioTrack.class, new ExpressionFormatter(dialog.getFormat().getExpression(), new AudioTrackFormat(), AudioTrack.class));
-					persistentMusicFormat.setValue(dialog.getFormat().getExpression());
-					break;
-				case File:
-					renameModel.useFormatter(File.class, new ExpressionFormatter(dialog.getFormat().getExpression(), new FileNameFormat(), File.class));
-					persistentFileFormat.setValue(dialog.getFormat().getExpression());
-					break;
+					case Episode:
+						renameModel.useFormatter(Episode.class, new ExpressionFormatter(
+								dialog.getFormat().getExpression(), EpisodeFormat.SeasonEpisode, Episode.class));
+						persistentEpisodeFormat.setValue(dialog.getFormat().getExpression());
+						break;
+					case Movie:
+						renameModel.useFormatter(Movie.class, new ExpressionFormatter(
+								dialog.getFormat().getExpression(), MovieFormat.NameYear, Movie.class));
+						persistentMovieFormat.setValue(dialog.getFormat().getExpression());
+						break;
+					case Music:
+						renameModel.useFormatter(AudioTrack.class, new ExpressionFormatter(
+								dialog.getFormat().getExpression(), new AudioTrackFormat(), AudioTrack.class));
+						persistentMusicFormat.setValue(dialog.getFormat().getExpression());
+						break;
+					case File:
+						renameModel.useFormatter(File.class, new ExpressionFormatter(dialog.getFormat().getExpression(),
+								new FileNameFormat(), File.class));
+						persistentFileFormat.setValue(dialog.getFormat().getExpression());
+						break;
 				}
 
 				if (binding == null) {
@@ -620,14 +657,14 @@ public class RenamePanel extends JComponent {
 			presetEditor.setVisible(true);
 
 			switch (presetEditor.getResult()) {
-			case SET:
-				persistentPresets.put(preset.getName(), presetEditor.getPreset());
-				break;
-			case DELETE:
-				persistentPresets.remove(preset.getName());
-				break;
-			case CANCEL:
-				break;
+				case SET:
+					persistentPresets.put(preset.getName(), presetEditor.getPreset());
+					break;
+				case DELETE:
+					persistentPresets.remove(preset.getName());
+					break;
+				case CANCEL:
+					break;
 			}
 		} catch (Exception e) {
 			debug.log(Level.WARNING, e, e::toString);
@@ -635,7 +672,9 @@ public class RenamePanel extends JComponent {
 	}
 
 	private List<Preset> getPresets() {
-		// load Presets and ensure Preset order on all platforms (e.g. Windows Registry Preferences are sorted alphabetically, but the same is not guaranteed for other platforms)
+		// load Presets and ensure Preset order on all platforms (e.g. Windows Registry
+		// Preferences are sorted alphabetically, but the same is not guaranteed for
+		// other platforms)
 		List<Preset> presets = new ArrayList<Preset>(persistentPresets.values());
 		presets.sort(comparing(Preset::getName, new AlphanumComparator(Locale.getDefault())));
 		return presets;
@@ -667,24 +706,26 @@ public class RenamePanel extends JComponent {
 		}
 	});
 
-	private final Action openHistoryAction = newAction("Open History", ResourceManager.getIcon("action.report"), evt -> {
-		try {
-			History model = HistorySpooler.getInstance().getCompleteHistory();
+	private final Action openHistoryAction = newAction("Open History", ResourceManager.getIcon("action.report"),
+			evt -> {
+				try {
+					History model = HistorySpooler.getInstance().getCompleteHistory();
 
-			HistoryDialog dialog = new HistoryDialog(getWindow(RenamePanel.this));
-			dialog.setLocationRelativeTo(RenamePanel.this);
-			dialog.setModel(model);
+					HistoryDialog dialog = new HistoryDialog(getWindow(RenamePanel.this));
+					dialog.setLocationRelativeTo(RenamePanel.this);
+					dialog.setModel(model);
 
-			// show and block
-			dialog.setVisible(true);
-		} catch (Exception e) {
-			log.log(Level.WARNING, e, cause(getRootCause(e)));
-		}
-	});
+					// show and block
+					dialog.setVisible(true);
+				} catch (Exception e) {
+					log.log(Level.WARNING, e, cause(getRootCause(e)));
+				}
+			});
 
 	@Subscribe
 	public void handle(Transferable transferable) throws Exception {
-		for (TransferablePolicy handler : new TransferablePolicy[] { filesList.getTransferablePolicy(), namesList.getTransferablePolicy() }) {
+		for (TransferablePolicy handler : new TransferablePolicy[] { filesList.getTransferablePolicy(),
+				namesList.getTransferablePolicy() }) {
 			if (handler != null && handler.accept(transferable)) {
 				handler.handleTransferable(transferable, TransferAction.PUT);
 				return;
@@ -746,7 +787,8 @@ public class RenamePanel extends JComponent {
 			}
 
 			try {
-				List<File> selection = onSecondaryLoop(preset::selectFiles); // run potentially long-running operations on secondary EDT
+				List<File> selection = onSecondaryLoop(preset::selectFiles); // run potentially long-running operations
+																				// on secondary EDT
 
 				if (selection.size() > 0) {
 					renameModel.clear();
@@ -764,7 +806,8 @@ public class RenamePanel extends JComponent {
 
 		@Override
 		public boolean isStrict(ActionEvent evt) {
-			return preset.getMatchMode() != null ? MATCH_MODE_STRICT.equals(preset.getMatchMode()) : super.isStrict(evt);
+			return preset.getMatchMode() != null ? MATCH_MODE_STRICT.equals(preset.getMatchMode())
+					: super.isStrict(evt);
 		}
 
 		@Override
@@ -784,14 +827,14 @@ public class RenamePanel extends JComponent {
 
 				if (format != null && preset.getDatasource() != null) {
 					switch (Mode.getMode(preset.getDatasource())) {
-					case Episode:
-						return new ExpressionFormatter(format, EpisodeFormat.SeasonEpisode, Episode.class);
-					case Movie:
-						return new ExpressionFormatter(format, MovieFormat.NameYear, Movie.class);
-					case Music:
-						return new ExpressionFormatter(format, new AudioTrackFormat(), AudioTrack.class);
-					case File:
-						return new ExpressionFormatter(format, new FileNameFormat(), File.class);
+						case Episode:
+							return new ExpressionFormatter(format, EpisodeFormat.SeasonEpisode, Episode.class);
+						case Movie:
+							return new ExpressionFormatter(format, MovieFormat.NameYear, Movie.class);
+						case Music:
+							return new ExpressionFormatter(format, new AudioTrackFormat(), AudioTrack.class);
+						case File:
+							return new ExpressionFormatter(format, new FileNameFormat(), File.class);
 					}
 				}
 
@@ -919,9 +962,11 @@ public class RenamePanel extends JComponent {
 
 				@Override
 				protected List<Match<File, ?>> doInBackground() throws Exception {
-					List<Match<File, ?>> matches = matcher.get().match(remainingFiles, strict, order, locale, autodetection, getWindow(RenamePanel.this));
+					List<Match<File, ?>> matches = matcher.get().match(remainingFiles, strict, order, locale,
+							autodetection, getWindow(RenamePanel.this));
 
-					// flush all memory caches to disk (before starting any long running file system operations that might be cancelled by the user)
+					// flush all memory caches to disk (before starting any long running file system
+					// operations that might be cancelled by the user)
 					CacheManager.getInstance().flushAll();
 
 					// remove matched files
@@ -943,6 +988,16 @@ public class RenamePanel extends JComponent {
 
 						renameModel.clear();
 						renameModel.addAll(matches);
+
+						// Notify user if autodetect found no matches for their files
+						if (matches.isEmpty() && !remainingFiles.isEmpty()) {
+							log.warning("Autodetect found no matches.");
+
+							// Show warning to user
+							JOptionPane.showMessageDialog(getWindow(RenamePanel.this),
+									"No matches found.\n\nPlease check that your files are named correctly or try a different database.",
+									"No Matches", JOptionPane.WARNING_MESSAGE);
+						}
 
 						// add remaining file entries
 						renameModel.files().addAll(remainingFiles);

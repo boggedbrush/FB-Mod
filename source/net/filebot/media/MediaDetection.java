@@ -148,9 +148,12 @@ public class MediaDetection {
 		}).filter(Objects::nonNull).findFirst().isPresent();
 	}
 
-	private static final SeasonEpisodeMatcher seasonEpisodeMatcherStrict = new SmartSeasonEpisodeMatcher(SeasonEpisodeMatcher.DEFAULT_SANITY, true);
-	private static final SeasonEpisodeMatcher seasonEpisodeMatcherNonStrict = new SmartSeasonEpisodeMatcher(SeasonEpisodeMatcher.DEFAULT_SANITY, false);
-	private static final DateMatcher dateMatcher = new DateMatcher(DateMatcher.DEFAULT_SANITY, Locale.ENGLISH, Locale.getDefault());
+	private static final SeasonEpisodeMatcher seasonEpisodeMatcherStrict = new SmartSeasonEpisodeMatcher(
+			SeasonEpisodeMatcher.DEFAULT_SANITY, true);
+	private static final SeasonEpisodeMatcher seasonEpisodeMatcherNonStrict = new SmartSeasonEpisodeMatcher(
+			SeasonEpisodeMatcher.DEFAULT_SANITY, false);
+	private static final DateMatcher dateMatcher = new DateMatcher(DateMatcher.DEFAULT_SANITY, Locale.ENGLISH,
+			Locale.getDefault());
 
 	public static SeasonEpisodeMatcher getSeasonEpisodeMatcher(boolean strict) {
 		return strict ? seasonEpisodeMatcherStrict : seasonEpisodeMatcherNonStrict;
@@ -183,7 +186,8 @@ public class MediaDetection {
 		return getDateMatcher().match(object.toString());
 	}
 
-	public static Map<Set<File>, Set<String>> mapSeriesNamesByFiles(Collection<File> files, Locale locale, boolean anime) throws Exception {
+	public static Map<Set<File>, Set<String>> mapSeriesNamesByFiles(Collection<File> files, Locale locale,
+			boolean anime) throws Exception {
 		// map series names by folder
 		Map<File, Set<String>> seriesNamesByFolder = new HashMap<File, Set<String>>();
 		Map<File, List<File>> filesByFolder = mapByFolder(files);
@@ -246,7 +250,8 @@ public class MediaDetection {
 
 					// SPECIAL CASE: 101, 201, 202, etc 3-digit SxE pattern
 					if (eid == null) {
-						List<SxE> d3sxe = new SeasonEpisodePattern(null, "(?<!\\p{Alnum})(\\d)(\\d{2})(?!\\p{Alnum})").match(file.getName());
+						List<SxE> d3sxe = new SeasonEpisodePattern(null, "(?<!\\p{Alnum})(\\d)(\\d{2})(?!\\p{Alnum})")
+								.match(file.getName());
 						if (d3sxe != null && d3sxe.size() > 0) {
 							eid = d3sxe;
 						}
@@ -319,11 +324,13 @@ public class MediaDetection {
 		return match;
 	}
 
-	public static List<String> detectSeriesNames(Collection<File> files, boolean anime, Locale locale) throws Exception {
+	public static List<String> detectSeriesNames(Collection<File> files, boolean anime, Locale locale)
+			throws Exception {
 		return detectSeriesNames(files, anime ? getAnimeIndex() : getSeriesIndex(), locale);
 	}
 
-	public static List<String> detectSeriesNames(Collection<File> files, List<IndexEntry<SearchResult>> index, Locale locale) throws Exception {
+	public static List<String> detectSeriesNames(Collection<File> files, List<IndexEntry<SearchResult>> index,
+			Locale locale) throws Exception {
 		// known series names
 		List<String> unids = new ArrayList<String>();
 
@@ -382,7 +389,8 @@ public class MediaDetection {
 				matches.addAll(matchSeriesByName(stripReleaseInfo(filenames, false), 0, index));
 			}
 
-			// use lenient sub sequence matching only as fallback and try name without spacing logic that may mess up any lookup
+			// use lenient sub sequence matching only as fallback and try name without
+			// spacing logic that may mess up any lookup
 			if (matches.isEmpty()) {
 				// try to narrow down file to series name as best as possible
 				List<String> sns = new ArrayList<String>();
@@ -411,7 +419,8 @@ public class MediaDetection {
 			debug.warning("Failed to match folder structure: " + e);
 		}
 
-		// match common word sequence and clean detected word sequence from unwanted elements
+		// match common word sequence and clean detected word sequence from unwanted
+		// elements
 		Set<String> queries = new LinkedHashSet<String>();
 
 		// check for known pattern matches
@@ -447,7 +456,8 @@ public class MediaDetection {
 
 							// account for {n}/{s00e00} folder structure (e.g. Firefly/S01E01 - Pilot)
 							if (sn == null && path.isDirectory()) {
-								queries.addAll(stripBlacklistedTerms(stripReleaseInfo(singleton(path.getName()), true)));
+								queries.addAll(
+										stripBlacklistedTerms(stripReleaseInfo(singleton(path.getName()), true)));
 							}
 						}
 					}
@@ -506,15 +516,18 @@ public class MediaDetection {
 		}, HighPerformanceMatcher::prepare, animeIndex);
 	}
 
-	public static List<String> matchSeriesByName(Collection<String> files, int maxStartIndex, List<IndexEntry<SearchResult>> index) throws Exception {
+	public static List<String> matchSeriesByName(Collection<String> files, int maxStartIndex,
+			List<IndexEntry<SearchResult>> index) throws Exception {
 		HighPerformanceMatcher nameMatcher = new HighPerformanceMatcher(maxStartIndex);
 		List<String> matches = new ArrayList<String>();
 
 		for (CollationKey[] name : HighPerformanceMatcher.prepare(files)) {
 			IndexEntry<SearchResult> bestMatch = null;
 			for (IndexEntry<SearchResult> it : index) {
-				CollationKey[] commonName = nameMatcher.matchFirstCommonSequence(new CollationKey[][] { name, it.getLenientKey() });
-				if (commonName != null && commonName.length >= it.getLenientKey().length && (bestMatch == null || commonName.length > bestMatch.getLenientKey().length)) {
+				CollationKey[] commonName = nameMatcher
+						.matchFirstCommonSequence(new CollationKey[][] { name, it.getLenientKey() });
+				if (commonName != null && commonName.length >= it.getLenientKey().length
+						&& (bestMatch == null || commonName.length > bestMatch.getLenientKey().length)) {
 					bestMatch = it;
 				}
 			}
@@ -529,8 +542,10 @@ public class MediaDetection {
 		}).collect(toList());
 	}
 
-	public static List<SearchResult> matchSeriesFromStringWithoutSpacing(Collection<String> names, boolean strict, List<IndexEntry<SearchResult>> index) throws IOException {
-		// clear name of punctuation, spacing, and leading 'The' or 'A' that are common causes for word-lookup to fail
+	public static List<SearchResult> matchSeriesFromStringWithoutSpacing(Collection<String> names, boolean strict,
+			List<IndexEntry<SearchResult>> index) throws IOException {
+		// clear name of punctuation, spacing, and leading 'The' or 'A' that are common
+		// causes for word-lookup to fail
 		Pattern spacing = Pattern.compile("(^(?i)(The|A)\\b)|[\\p{Punct}\\p{Space}]+");
 
 		List<String> terms = new ArrayList<String>(names.size());
@@ -560,7 +575,8 @@ public class MediaDetection {
 		return seriesList;
 	}
 
-	public static List<Movie> detectMovie(File movieFile, MovieIdentificationService service, Locale locale, boolean strict) throws Exception {
+	public static List<Movie> detectMovie(File movieFile, MovieIdentificationService service, Locale locale,
+			boolean strict) throws Exception {
 		List<Movie> options = new ArrayList<Movie>();
 
 		// try xattr metadata if enabled
@@ -593,7 +609,8 @@ public class MediaDetection {
 			}
 		}
 
-		// search by file name or folder name (NOTE: can't initialize with known options because misleading NFO files may lead to bad matches)
+		// search by file name or folder name (NOTE: can't initialize with known options
+		// because misleading NFO files may lead to bad matches)
 		List<String> names = new ArrayList<String>(2);
 
 		// 1. term: try to match movie pattern 'name (year)' or use filename as is
@@ -607,9 +624,11 @@ public class MediaDetection {
 
 		// reduce movie names
 		Set<String> terms = reduceMovieNamePermutations(names);
+
 		List<Movie> movieNameMatches = matchMovieName(terms, true, 0);
 
 		// skip further queries if collected matches are already sufficient
+
 		if (movieNameMatches.size() > 0) {
 			options.addAll(movieNameMatches);
 			return sortMoviesBySimilarity(options, terms);
@@ -625,7 +644,8 @@ public class MediaDetection {
 			return sortMoviesBySimilarity(options, terms);
 		}
 
-		// if matching name+year failed, try matching only by name (in non-strict mode we would have checked these cases already by now)
+		// if matching name+year failed, try matching only by name (in non-strict mode
+		// we would have checked these cases already by now)
 		if (movieNameMatches.isEmpty() && strict) {
 			movieNameMatches = matchMovieName(terms, false, 0);
 			if (movieNameMatches.isEmpty()) {
@@ -650,7 +670,8 @@ public class MediaDetection {
 		if (service != null) {
 			List<Movie> results = queryMovieByFileName(terms, service, locale);
 
-			// try query without year as it sometimes messes up results if years don't match properly (movie release years vs dvd release year, etc)
+			// try query without year as it sometimes messes up results if years don't match
+			// properly (movie release years vs dvd release year, etc)
 			if (results.isEmpty() && !strict) {
 				List<String> lastResortQueryList = new ArrayList<String>();
 				Pattern yearPattern = Pattern.compile("(?:19|20)\\d{2}");
@@ -679,20 +700,24 @@ public class MediaDetection {
 		return sortMoviesBySimilarity(options, terms);
 	}
 
-	public static List<Movie> detectMovieWithYear(File movieFile, MovieIdentificationService service, Locale locale, boolean strict) throws Exception {
+	public static List<Movie> detectMovieWithYear(File movieFile, MovieIdentificationService service, Locale locale,
+			boolean strict) throws Exception {
 		// in non-strict mode, process all movie files as best as possible
 		if (!strict) {
 			return detectMovie(movieFile, service, locale, strict);
 		}
 
-		// in strict mode, only process movies that follow the name (year) pattern, so we can confirm each match by checking the movie year
+		// in strict mode, only process movies that follow the name (year) pattern, so
+		// we can confirm each match by checking the movie year
 		List<Integer> year = parseMovieYear(getRelativePathTail(movieFile, 3).getPath());
 		if (year.isEmpty() || isEpisode(movieFile, true)) {
 			return null;
 		}
 
-		// allow only movie matches where the the movie year matches the year pattern in the filename
-		return detectMovie(movieFile, service, locale, strict).stream().filter(m -> year.contains(m.getYear())).collect(toList());
+		// allow only movie matches where the the movie year matches the year pattern in
+		// the filename
+		return detectMovie(movieFile, service, locale, strict).stream().filter(m -> year.contains(m.getYear()))
+				.collect(toList());
 	}
 
 	public static SimilarityMetric getMovieMatchMetric() {
@@ -708,7 +733,8 @@ public class MediaDetection {
 
 			@Override
 			protected String normalize(Object object) {
-				return streamMatches(object.toString(), year).mapToInt(Integer::parseInt).flatMap(i -> IntStream.of(i, i + 1)).mapToObj(Objects::toString).collect(joining(" "));
+				return streamMatches(object.toString(), year).mapToInt(Integer::parseInt)
+						.flatMap(i -> IntStream.of(i, i + 1)).mapToObj(Objects::toString).collect(joining(" "));
 			}
 
 			@Override
@@ -718,7 +744,8 @@ public class MediaDetection {
 		}, new SequenceMatchSimilarity(), new SequenceMatchSimilarity(0, true));
 	}
 
-	public static Movie getLocalizedMovie(MovieIdentificationService service, Movie movie, Locale locale) throws Exception {
+	public static Movie getLocalizedMovie(MovieIdentificationService service, Movie movie, Locale locale)
+			throws Exception {
 		// retrieve language and service specific movie object
 		if (movie != null) {
 			try {
@@ -731,16 +758,20 @@ public class MediaDetection {
 	}
 
 	public static SimilarityMetric getSeriesMatchMetric() {
-		return new MetricAvg(new SequenceMatchSimilarity(), new NameSimilarityMetric(), new SequenceMatchSimilarity(0, true));
+		return new MetricAvg(new SequenceMatchSimilarity(), new NameSimilarityMetric(),
+				new SequenceMatchSimilarity(0, true));
 	}
 
-	public static <T extends SearchResult> List<T> sortBySimilarity(Collection<T> options, Collection<String> terms, SimilarityMetric metric) {
+	public static <T extends SearchResult> List<T> sortBySimilarity(Collection<T> options, Collection<String> terms,
+			SimilarityMetric metric) {
 		return sortBySimilarity(options, terms, metric, SearchResult::getEffectiveNames);
 	}
 
-	public static <T extends SearchResult> List<T> sortBySimilarity(Collection<T> options, Collection<String> terms, SimilarityMetric metric, Function<SearchResult, Collection<String>> mapper) {
+	public static <T extends SearchResult> List<T> sortBySimilarity(Collection<T> options, Collection<String> terms,
+			SimilarityMetric metric, Function<SearchResult, Collection<String>> mapper) {
 		// similarity comparator with multi-value support
-		SimilarityComparator<SearchResult, String> comparator = new SimilarityComparator<SearchResult, String>(metric, terms, mapper);
+		SimilarityComparator<SearchResult, String> comparator = new SimilarityComparator<SearchResult, String>(metric,
+				terms, mapper);
 
 		// sort by ranking and remove duplicate entries
 		List<T> ranking = options.stream().sorted(comparator).distinct().collect(toList());
@@ -752,7 +783,8 @@ public class MediaDetection {
 		return ranking;
 	}
 
-	public static List<Movie> sortMoviesBySimilarity(Collection<Movie> options, Collection<String> terms) throws Exception {
+	public static List<Movie> sortMoviesBySimilarity(Collection<Movie> options, Collection<String> terms)
+			throws Exception {
 		Set<String> paragon = new TreeSet<String>(String.CASE_INSENSITIVE_ORDER);
 		paragon.addAll(stripReleaseInfo(terms, true));
 		paragon.addAll(stripReleaseInfo(terms, false));
@@ -776,7 +808,8 @@ public class MediaDetection {
 	}
 
 	public static String reduceMovieName(String name, boolean strict) throws IOException {
-		Matcher matcher = compile(strict ? "^(.+)[\\[\\(]((?:19|20)\\d{2})[\\]\\)]" : "^(.+?)((?:19|20)\\d{2})").matcher(name);
+		Matcher matcher = compile(strict ? "^(.+)[\\[\\(]((?:19|20)\\d{2})[\\]\\)]" : "^(.+?)((?:19|20)\\d{2})")
+				.matcher(name);
 		if (matcher.find() && parseMovieYear(matcher.group(2)).size() > 0) {
 			return String.format("%s %s", trimTrailingPunctuation(matcher.group(1)), matcher.group(2));
 		}
@@ -808,7 +841,8 @@ public class MediaDetection {
 			File f = movieFile;
 
 			// check for double nested structures
-			if (!isStructureRoot(f.getParentFile()) && checkMovie(f.getParentFile(), false) != null && checkMovie(f, false) == null) {
+			if (!isStructureRoot(f.getParentFile()) && checkMovie(f.getParentFile(), false) != null
+					&& checkMovie(f, false) == null) {
 				return f.getParentFile();
 			} else {
 				return isStructureRoot(f) ? null : f;
@@ -826,7 +860,8 @@ public class MediaDetection {
 			}
 		}
 
-		// otherwise try the first potentially meaningful parent folder (max 2 levels deep)
+		// otherwise try the first potentially meaningful parent folder (max 2 levels
+		// deep)
 		File f = movieFile.getParentFile();
 		for (int i = 0; f != null && i < 2 && !isStructureRoot(f); f = f.getParentFile(), i++) {
 			String term = stripReleaseInfo(f.getName());
@@ -840,7 +875,8 @@ public class MediaDetection {
 			}
 		}
 
-		if (movieFile.getParentFile() != null && !isStructureRoot(f.getParentFile()) && stripReleaseInfo(movieFile.getParentFile().getName()).length() > 0) {
+		if (movieFile.getParentFile() != null && !isStructureRoot(f.getParentFile())
+				&& stripReleaseInfo(movieFile.getParentFile().getName()).length() > 0) {
 			return movieFile.getParentFile();
 		}
 		return null;
@@ -853,7 +889,8 @@ public class MediaDetection {
 
 	private static final ArrayList<IndexEntry<Movie>> movieIndex = new ArrayList<IndexEntry<Movie>>();
 
-	private static <T extends SearchResult> List<IndexEntry<T>> getIndex(Supplier<T[]> function, Function<T, List<IndexEntry<T>>> mapper, ArrayList<IndexEntry<T>> sink) {
+	private static <T extends SearchResult> List<IndexEntry<T>> getIndex(Supplier<T[]> function,
+			Function<T, List<IndexEntry<T>>> mapper, ArrayList<IndexEntry<T>> sink) {
 		synchronized (sink) {
 			if (sink.isEmpty()) {
 				T[] index = function.get();
@@ -867,7 +904,9 @@ public class MediaDetection {
 	public static List<IndexEntry<Movie>> getMovieIndex() {
 		return getIndex(() -> {
 			try {
-				return releaseInfo.getMovieList();
+				Movie[] movies = releaseInfo.getMovieList();
+				debug.info("Movie index loaded: " + movies.length + " movies");
+				return movies;
 			} catch (Exception e) {
 				debug.severe("Failed to load movie index: " + e.getMessage());
 				return new Movie[0];
@@ -884,9 +923,11 @@ public class MediaDetection {
 
 		for (IndexEntry<Movie> movie : getMovieIndex()) {
 			for (CollationKey[] name : names) {
-				CollationKey[] commonName = nameMatcher.matchFirstCommonSequence(new CollationKey[][] { name, movie.getLenientKey() });
+				CollationKey[] commonName = nameMatcher
+						.matchFirstCommonSequence(new CollationKey[][] { name, movie.getLenientKey() });
 				if (commonName != null && commonName.length >= movie.getLenientKey().length) {
-					CollationKey[] strictCommonName = nameMatcher.matchFirstCommonSequence(new CollationKey[][] { name, movie.getStrictKey() });
+					CollationKey[] strictCommonName = nameMatcher
+							.matchFirstCommonSequence(new CollationKey[][] { name, movie.getStrictKey() });
 					if (strictCommonName != null && strictCommonName.length >= movie.getStrictKey().length) {
 						// prefer strict match
 						matchMap.put(movie.getObject(), movie.getStrictName());
@@ -905,7 +946,8 @@ public class MediaDetection {
 	}
 
 	public static List<Movie> matchMovieFromStringWithoutSpacing(Collection<String> names, boolean strict) {
-		// clear name of punctuation, spacing, and leading 'The' or 'A' that are common causes for word-lookup to fail
+		// clear name of punctuation, spacing, and leading 'The' or 'A' that are common
+		// causes for word-lookup to fail
 		Pattern spacing = Pattern.compile("(^(?i)(The|A)\\b)|[\\p{Punct}\\p{Space}]+");
 
 		List<String> terms = new ArrayList<String>(names.size());
@@ -938,17 +980,16 @@ public class MediaDetection {
 		return new ArrayList<Movie>(movies);
 	}
 
-	private static List<Movie> queryMovieByFileName(Collection<String> files, MovieIdentificationService queryLookupService, Locale locale) throws Exception {
+	private static List<Movie> queryMovieByFileName(Collection<String> files,
+			MovieIdentificationService queryLookupService, Locale locale) throws Exception {
 		// remove blacklisted terms and remove duplicates
 		List<String> querySet = getUniqueQuerySet(emptySet(), files);
-
-		// DEBUG
-		debug.finest(format("Query Movie => %s", querySet));
 
 		final Map<Movie, Float> probabilityMap = new LinkedHashMap<Movie, Float>();
 		final SimilarityMetric metric = getMovieMatchMetric();
 		for (String query : querySet) {
-			for (Movie movie : queryLookupService.searchMovie(query.toLowerCase(), locale)) {
+			List<Movie> results = queryLookupService.searchMovie(query.toLowerCase(), locale);
+			for (Movie movie : results) {
 				probabilityMap.put(movie, metric.getSimilarity(query, movie));
 			}
 		}
@@ -977,12 +1018,16 @@ public class MediaDetection {
 		Set<String> terms = new LinkedHashSet<String>();
 		terms.addAll(stripReleaseInfo(extra, true));
 		terms.addAll(stripReleaseInfo(extra, false));
-		addUniqueQuerySet(stripBlacklistedTerms(terms), normalize, normalize, unique);
+
+		Collection<String> stripped = stripBlacklistedTerms(terms);
+
+		addUniqueQuerySet(stripped, normalize, normalize, unique);
 
 		return new ArrayList<String>(unique.values());
 	}
 
-	private static void addUniqueQuerySet(Collection<String> terms, Function<String, String> keyFunction, Function<String, String> valueFunction, Map<String, String> uniqueMap) {
+	private static void addUniqueQuerySet(Collection<String> terms, Function<String, String> keyFunction,
+			Function<String, String> valueFunction, Map<String, String> uniqueMap) {
 		for (String term : terms) {
 			if (term != null && term.length() > 0) {
 				String key = keyFunction.apply(term);
@@ -1002,7 +1047,8 @@ public class MediaDetection {
 		for (Movie movie : options) {
 			for (String alias : movie.getEffectiveNames()) {
 				CollationKey[] movieSeq = HighPerformanceMatcher.prepare(normalizePunctuation(alias));
-				CollationKey[] commonSeq = nameMatcher.matchFirstCommonSequence(new CollationKey[][] { nameSeq, movieSeq });
+				CollationKey[] commonSeq = nameMatcher
+						.matchFirstCommonSequence(new CollationKey[][] { nameSeq, movieSeq });
 
 				if (commonSeq != null && commonSeq.length >= movieSeq.length) {
 					movies.add(movie);
@@ -1021,11 +1067,13 @@ public class MediaDetection {
 	}
 
 	public static boolean isVolumeRoot(File folder) {
-		return folder == null || folder.getName() == null || folder.getName().isEmpty() || releaseInfo.getVolumeRoots().contains(folder);
+		return folder == null || folder.getName() == null || folder.getName().isEmpty()
+				|| releaseInfo.getVolumeRoots().contains(folder);
 	}
 
 	public static boolean isStructureRoot(File folder) throws Exception {
-		return isVolumeRoot(folder) || releaseInfo.getStructureRootPattern().matcher(folder.getName()).matches() || ApplicationFolder.UserHome.get().equals(folder.getParentFile());
+		return isVolumeRoot(folder) || releaseInfo.getStructureRootPattern().matcher(folder.getName()).matches()
+				|| ApplicationFolder.UserHome.get().equals(folder.getParentFile());
 	}
 
 	public static File getStructureRoot(File file) throws Exception {
@@ -1035,7 +1083,8 @@ public class MediaDetection {
 				if (it.isDirectory()) {
 					return it;
 				}
-				structureRoot = true; // find first existing folder at or after the structure root folder (which may not exist yet)
+				structureRoot = true; // find first existing folder at or after the structure root folder (which may
+										// not exist yet)
 			}
 		}
 		return null;
@@ -1078,7 +1127,8 @@ public class MediaDetection {
 		for (File file : files) {
 			String key = getExtension(file);
 
-			// allow extended extensions for subtitles files, for example name.eng.srt => map by en.srt
+			// allow extended extensions for subtitles files, for example name.eng.srt =>
+			// map by en.srt
 			if (key != null && SUBTITLE_FILES.accept(file)) {
 				Locale locale = releaseInfo.getSubtitleLanguageTag(getName(file));
 				if (locale != null) {
@@ -1143,7 +1193,8 @@ public class MediaDetection {
 		return groups;
 	}
 
-	public static Map<String, List<File>> mapBySeriesName(Collection<File> files, boolean anime, Locale locale) throws Exception {
+	public static Map<String, List<File>> mapBySeriesName(Collection<File> files, boolean anime, Locale locale)
+			throws Exception {
 		Map<String, List<File>> result = new TreeMap<String, List<File>>(String.CASE_INSENSITIVE_ORDER);
 
 		for (File f : files) {
@@ -1238,7 +1289,8 @@ public class MediaDetection {
 		return collection;
 	}
 
-	public static Set<SearchResult> lookupSeriesNameByInfoFile(Collection<File> files, Locale language) throws Exception {
+	public static Set<SearchResult> lookupSeriesNameByInfoFile(Collection<File> files, Locale language)
+			throws Exception {
 		Set<SearchResult> names = new LinkedHashSet<SearchResult>();
 
 		SortedSet<File> folders = new TreeSet<File>(reverseOrder());
@@ -1284,7 +1336,8 @@ public class MediaDetection {
 	}
 
 	public static List<Integer> grepTheTvdbId(CharSequence text) {
-		// scan for thetvdb id patterns like http://www.thetvdb.com/?tab=series&id=78874&lid=14
+		// scan for thetvdb id patterns like
+		// http://www.thetvdb.com/?tab=series&id=78874&lid=14
 		Pattern tvdbUrl = Pattern.compile("thetvdb.com[\\p{Graph}]*?[\\p{Punct}]id=(\\d+)", Pattern.CASE_INSENSITIVE);
 		return streamMatches(text, tvdbUrl, m -> m.group(1)).map(Integer::parseInt).collect(toList());
 	}
@@ -1299,13 +1352,15 @@ public class MediaDetection {
 		return tvdbId.isEmpty() ? null : WebServices.TheTVDB.getSeriesInfo(tvdbId.get(0), locale);
 	}
 
-	public static <T extends SearchResult> List<T> getProbableMatches(String query, Collection<T> options, boolean alias, boolean strict) {
+	public static <T extends SearchResult> List<T> getProbableMatches(String query, Collection<T> options,
+			boolean alias, boolean strict) {
 		if (query == null) {
 			return options.stream().distinct().collect(toList());
 		}
 
 		// check all alias names, or just the primary name
-		Function<SearchResult, Collection<String>> names = alias ? SearchResult::getEffectiveNames : f -> singleton(f.getName());
+		Function<SearchResult, Collection<String>> names = alias ? SearchResult::getEffectiveNames
+				: f -> singleton(f.getName());
 
 		// auto-select most probable search result
 		List<T> probableMatches = new ArrayList<T>();
@@ -1318,7 +1373,8 @@ public class MediaDetection {
 		// remove trailing braces, e.g. Doctor Who (2005) -> doctor who
 		String q = removeTrailingBrackets(query).toLowerCase();
 
-		// find probable matches using name similarity > 0.8 (or > 0.6 in non-strict mode)
+		// find probable matches using name similarity > 0.8 (or > 0.6 in non-strict
+		// mode)
 		for (T option : options) {
 			float f = 0;
 			for (String n : names.apply(option)) {

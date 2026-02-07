@@ -13,7 +13,10 @@ import static net.filebot.util.FileUtilities.*;
 import static net.filebot.util.RegularExpressions.*;
 import static net.filebot.util.StringUtilities.*;
 
+import java.util.logging.Logger;
+
 import java.io.File;
+
 import java.io.FileFilter;
 import java.net.URI;
 import java.net.URL;
@@ -54,7 +57,10 @@ import net.filebot.web.SubtitleSearchResult;
 
 public class ReleaseInfo {
 
+	private static final Logger log = Logger.getLogger(ReleaseInfo.class.getName());
+
 	private String[] videoSources;
+
 	private Pattern videoSourcePattern;
 
 	public String getVideoSource(String... input) {
@@ -144,12 +150,14 @@ public class ReleaseInfo {
 
 	protected String matchLast(Pattern pattern, String[] paragon, CharSequence... sequence) {
 		// match last occurrence
-		String lastMatch = stream(sequence).filter(Objects::nonNull).map(s -> matchLastOccurrence(s, pattern)).filter(Objects::nonNull).findFirst().orElse(null);
+		String lastMatch = stream(sequence).filter(Objects::nonNull).map(s -> matchLastOccurrence(s, pattern))
+				.filter(Objects::nonNull).findFirst().orElse(null);
 
 		// prefer standard value over matched value
 		if (lastMatch != null && paragon != null) {
 			for (String it : paragon) {
-				lastMatch = compile("(?<!\\p{Alnum})" + quote(it) + "(?!\\p{Alnum})", CASE_INSENSITIVE | UNICODE_CHARACTER_CLASS).matcher(lastMatch).replaceAll(it);
+				lastMatch = compile("(?<!\\p{Alnum})" + quote(it) + "(?!\\p{Alnum})",
+						CASE_INSENSITIVE | UNICODE_CHARACTER_CLASS).matcher(lastMatch).replaceAll(it);
 			}
 		}
 
@@ -177,14 +185,22 @@ public class ReleaseInfo {
 			Pattern resolution = getResolutionPattern();
 			Pattern queryBlacklist = getBlacklistPattern();
 
-			stopwords[b] = new Pattern[] { languageSuffix, languageTag, videoSource, videoTags, videoFormat, resolution, stereoscopic3d };
-			blacklist[b] = new Pattern[] { EMBEDDED_CHECKSUM, languageSuffix, releaseGroupTrim, queryBlacklist, languageTag, clutterBracket, releaseGroup, videoSource, videoTags, videoFormat, resolution, stereoscopic3d };
+			stopwords[b] = new Pattern[] { languageSuffix, languageTag, videoSource, videoTags, videoFormat, resolution,
+					stereoscopic3d };
+			blacklist[b] = new Pattern[] { EMBEDDED_CHECKSUM, languageSuffix, releaseGroupTrim, queryBlacklist,
+					languageTag, clutterBracket, releaseGroup, videoSource, videoTags, videoFormat, resolution,
+					stereoscopic3d };
+
 		}
 
 		return items.stream().map(it -> {
-			String head = strict ? clean(it, stopwords[b]) : substringBefore(it, stopwords[b]);
-			String norm = normalizePunctuation(clean(head, blacklist[b]));
-			return norm;
+			if (strict) {
+				String head = clean(it, stopwords[b]);
+				return normalizePunctuation(clean(head, blacklist[b]));
+			} else {
+				String head = substringBefore(it, stopwords[b]);
+				return normalizePunctuation(clean(head, blacklist[b]));
+			}
 		}).filter(s -> s.length() > 0).collect(toList());
 	}
 
@@ -232,7 +248,8 @@ public class ReleaseInfo {
 					volumes.add(mediaRoot);
 				}
 
-				// e.g. ignore default Movie folder (user.home and real user home are different in the sandbox environment)
+				// e.g. ignore default Movie folder (user.home and real user home are different
+				// in the sandbox environment)
 				File sandbox = new File(System.getProperty("user.home"));
 
 				for (File userFolder : getChildren(sandbox, FOLDERS)) {
@@ -277,22 +294,26 @@ public class ReleaseInfo {
 	public Pattern getLanguageTagPattern(boolean strict) {
 		// [en]
 		if (strict) {
-			return compile("(?<=[-\\[\\{\\(])" + or(quoteAll(getDefaultLanguageMap().keySet())) + "(?=[-\\]\\}\\)]|$)", CASE_INSENSITIVE);
+			return compile("(?<=[-\\[\\{\\(])" + or(quoteAll(getDefaultLanguageMap().keySet())) + "(?=[-\\]\\}\\)]|$)",
+					CASE_INSENSITIVE);
 		}
 
 		// FR
-		List<String> allCapsLanguageTags = getDefaultLanguageMap().keySet().stream().map(String::toUpperCase).collect(toList());
+		List<String> allCapsLanguageTags = getDefaultLanguageMap().keySet().stream().map(String::toUpperCase)
+				.collect(toList());
 		return compile("(?<!\\p{Alnum})" + or(quoteAll(allCapsLanguageTags)) + "(?!\\p{Alnum})");
 	}
 
 	public Pattern getSubtitleCategoryTagPattern() {
 		// e.g. ".en.srt" or ".en.forced.srt"
-		return compile("(?<=[._-](" + or(quoteAll(getDefaultLanguageMap().keySet())) + ")[._-])" + or(getSubtitleCategoryTags()) + "$", CASE_INSENSITIVE);
+		return compile("(?<=[._-](" + or(quoteAll(getDefaultLanguageMap().keySet())) + ")[._-])"
+				+ or(getSubtitleCategoryTags()) + "$", CASE_INSENSITIVE);
 	}
 
 	public Pattern getSubtitleLanguageTagPattern() {
 		// e.g. ".en.srt" or ".en.forced.srt"
-		return compile("(?<=[._-])" + or(quoteAll(getDefaultLanguageMap().keySet())) + "(?=([._-]" + or(getSubtitleCategoryTags()) + ")?$)", CASE_INSENSITIVE);
+		return compile("(?<=[._-])" + or(quoteAll(getDefaultLanguageMap().keySet())) + "(?=([._-]"
+				+ or(getSubtitleCategoryTags()) + ")?$)", CASE_INSENSITIVE);
 	}
 
 	public Pattern getResolutionPattern() {
@@ -303,15 +324,18 @@ public class ReleaseInfo {
 	public Pattern getVideoFormatPattern(boolean strict) {
 		// pattern matching any video source name
 		String pattern = getProperty("pattern.video.format");
-		return strict ? compile("(?<!\\p{Alpha})(" + pattern + ")(?!\\p{Alpha})", CASE_INSENSITIVE) : compile(pattern, CASE_INSENSITIVE);
+		return strict ? compile("(?<!\\p{Alpha})(" + pattern + ")(?!\\p{Alpha})", CASE_INSENSITIVE)
+				: compile(pattern, CASE_INSENSITIVE);
 	}
 
 	public Pattern getVideoSourcePattern() {
-		return compileWordPattern(getProperty("pattern.video.source")); // pattern matching any video source name, like BluRay
+		return compileWordPattern(getProperty("pattern.video.source")); // pattern matching any video source name, like
+																		// BluRay
 	}
 
 	public Pattern getVideoTagPattern() {
-		return compileWordPattern(getProperty("pattern.video.tags")); // pattern matching any video tag, like Directors Cut
+		return compileWordPattern(getProperty("pattern.video.tags")); // pattern matching any video tag, like Directors
+																		// Cut
 	}
 
 	public Pattern getStereoscopic3DPattern() {
@@ -350,12 +374,20 @@ public class ReleaseInfo {
 	}
 
 	public Pattern getReleaseGroupTrimPattern() throws Exception {
-		// pattern matching any release group name enclosed in specific separators or at the start/end
-		return compile("(?<=\\[|\\(|^)" + or(releaseGroup.get()) + "(?=\\]|\\)|\\-)|(?<=\\[|\\(|\\-)" + or(releaseGroup.get()) + "(?=\\]|\\)|$)", CASE_INSENSITIVE);
+		// pattern matching any release group name enclosed in specific separators or at
+		// the start/end
+		return compile("(?<=\\[|\\(|^)" + or(releaseGroup.get()) + "(?=\\]|\\)|\\-)|(?<=\\[|\\(|\\-)"
+				+ or(releaseGroup.get()) + "(?=\\]|\\)|$)", CASE_INSENSITIVE);
 	}
 
 	public Pattern getBlacklistPattern() throws Exception {
-		return compileWordPattern(queryBlacklist.get()); // pattern matching any release group name enclosed in separators
+		String[] terms = queryBlacklist.get();
+		// filter out overly tracking terms like .*
+		if (terms != null) {
+			terms = stream(terms).filter(s -> !s.equals(".*") && !s.isEmpty()).toArray(String[]::new);
+		}
+		return compileWordPattern(terms); // pattern matching any release group name enclosed in
+											// separators
 	}
 
 	private Pattern compileWordPattern(String[] patterns) {
@@ -408,7 +440,9 @@ public class ReleaseInfo {
 
 	public FileFilter getClutterTypeFilter() {
 		if (clutterTypeFilter == null) {
-			clutterTypeFilter = new ClutterFileFilter(new RegexFindFilter(compile(getProperty("pattern.clutter.types"), CASE_INSENSITIVE)), Long.parseLong(getProperty("number.clutter.maxfilesize")));
+			clutterTypeFilter = new ClutterFileFilter(
+					new RegexFindFilter(compile(getProperty("pattern.clutter.types"), CASE_INSENSITIVE)),
+					Long.parseLong(getProperty("number.clutter.maxfilesize")));
 		}
 		return clutterTypeFilter;
 	}
@@ -417,7 +451,8 @@ public class ReleaseInfo {
 
 	public FileFilter getClutterFileFilter() {
 		if (clutterFileFilter == null) {
-			clutterFileFilter = new ClutterFileFilter(new FileFolderNameFilter(getExcludePattern()), Long.parseLong(getProperty("number.clutter.maxfilesize")));
+			clutterFileFilter = new ClutterFileFilter(new FileFolderNameFilter(getExcludePattern()),
+					Long.parseLong(getProperty("number.clutter.maxfilesize")));
 		}
 		return clutterFileFilter;
 	}
@@ -441,23 +476,27 @@ public class ReleaseInfo {
 		return PIPE.split(tags);
 	}
 
-	private final Resource<Map<Pattern, String>> seriesMappings = resource("url.series-mappings", Cache.ONE_WEEK, Function.identity(), String[]::new).transform(lines -> {
-		Map<Pattern, String> map = new LinkedHashMap<Pattern, String>(lines.length);
-		stream(lines).map(s -> TAB.split(s, 2)).filter(v -> v.length == 2).forEach(v -> {
-			Pattern pattern = compile("(?<!\\p{Alnum})(" + v[0] + ")(?!\\p{Alnum})", CASE_INSENSITIVE);
-			map.put(pattern, v[1]);
-		});
-		return unmodifiableMap(map);
-	}).memoize();
+	private final Resource<Map<Pattern, String>> seriesMappings = resource("url.series-mappings", Cache.ONE_WEEK,
+			Function.identity(), String[]::new).transform(lines -> {
+				Map<Pattern, String> map = new LinkedHashMap<Pattern, String>(lines.length);
+				stream(lines).map(s -> TAB.split(s, 2)).filter(v -> v.length == 2).forEach(v -> {
+					Pattern pattern = compile("(?<!\\p{Alnum})(" + v[0] + ")(?!\\p{Alnum})", CASE_INSENSITIVE);
+					map.put(pattern, v[1]);
+				});
+				return unmodifiableMap(map);
+			}).memoize();
 
 	private final Resource<String[]> releaseGroup = lines("url.release-groups", Cache.ONE_WEEK);
 	private final Resource<String[]> queryBlacklist = lines("url.query-blacklist", Cache.ONE_WEEK);
 
-	private final Resource<SearchResult[]> tvdbIndex = tsv("url.thetvdb-index", Cache.ONE_WEEK, this::parseSeries, SearchResult[]::new);
-	private final Resource<SearchResult[]> anidbIndex = tsv("url.anidb-index", Cache.ONE_WEEK, this::parseSeries, SearchResult[]::new);
+	private final Resource<SearchResult[]> tvdbIndex = tsv("url.thetvdb-index", Cache.ONE_WEEK, this::parseSeries,
+			SearchResult[]::new);
+	private final Resource<SearchResult[]> anidbIndex = tsv("url.anidb-index", Cache.ONE_WEEK, this::parseSeries,
+			SearchResult[]::new);
 
 	private final Resource<Movie[]> movieIndex = tsv("url.movie-list", Cache.ONE_MONTH, this::parseMovie, Movie[]::new);
-	private final Resource<SubtitleSearchResult[]> osdbIndex = tsv("url.osdb-index", Cache.ONE_MONTH, this::parseSubtitle, SubtitleSearchResult[]::new);
+	private final Resource<SubtitleSearchResult[]> osdbIndex = tsv("url.osdb-index", Cache.ONE_MONTH,
+			this::parseSubtitle, SubtitleSearchResult[]::new);
 
 	private final SystemProperty<Duration> refreshDuration = SystemProperty.of("url.refresh", Duration::parse);
 
@@ -484,21 +523,25 @@ public class ReleaseInfo {
 		int year = parseInt(v[3]);
 		String name = v[4];
 		String[] aliasNames = copyOfRange(v, 5, v.length);
-		return new SubtitleSearchResult(name, aliasNames, year, imdbId, -1, Locale.ENGLISH, SubtitleSearchResult.Kind.forName(kind), score);
+		return new SubtitleSearchResult(name, aliasNames, year, imdbId, -1, Locale.ENGLISH,
+				SubtitleSearchResult.Kind.forName(kind), score);
 	}
 
 	protected Resource<String[]> lines(String name, Duration expirationTime) {
 		return resource(name, expirationTime, Function.identity(), String[]::new).memoize();
 	}
 
-	protected <A> Resource<A[]> tsv(String name, Duration expirationTime, Function<String[], A> parse, IntFunction<A[]> generator) {
+	protected <A> Resource<A[]> tsv(String name, Duration expirationTime, Function<String[], A> parse,
+			IntFunction<A[]> generator) {
 		return resource(name, expirationTime, s -> parse.apply(TAB.split(s)), generator).memoize();
 	}
 
-	protected <A> Resource<A[]> resource(String name, Duration expirationTime, Function<String, A> parse, IntFunction<A[]> generator) {
+	protected <A> Resource<A[]> resource(String name, Duration expirationTime, Function<String, A> parse,
+			IntFunction<A[]> generator) {
 		return () -> {
 			Cache cache = Cache.getCache("data", CacheType.Persistent);
-			byte[] bytes = cache.bytes(name, n -> getResourceURL(getProperty(n)), XZInputStream::new).expire(refreshDuration.optional().orElse(expirationTime)).get();
+			byte[] bytes = cache.bytes(name, n -> getResourceURL(getProperty(n)), XZInputStream::new)
+					.expire(refreshDuration.optional().orElse(expirationTime)).get();
 
 			// all data files are UTF-8 encoded XZ compressed text files
 			Stream<String> lines = NEWLINE.splitAsStream(UTF_8.decode(ByteBuffer.wrap(bytes)));
@@ -577,7 +620,8 @@ public class ReleaseInfo {
 		public boolean accept(File file) {
 			if (file.isFile()) {
 				// check file name without extension and parent folder name
-				return namePattern.matcher(getNameWithoutExtension(file.getName())).find() || namePattern.matcher(file.getParentFile().getName()).find();
+				return namePattern.matcher(getNameWithoutExtension(file.getName())).find()
+						|| namePattern.matcher(file.getParentFile().getName()).find();
 			} else {
 				// just check folder name
 				return namePattern.matcher(file.getName()).find();
@@ -602,7 +646,13 @@ public class ReleaseInfo {
 	}
 
 	private String or(Object[] terms) {
-		return join(stream(terms).sorted(reverseOrder()), "|", "(", ")"); // non-capturing group that matches the longest occurrence
+		// if terms are empty, return a pattern that matches nothing
+		if (terms == null || terms.length == 0) {
+			return "\\b\\B"; // will never match
+		}
+
+		return join(stream(terms).sorted(reverseOrder()), "|", "(", ")"); // non-capturing group that matches the
+																			// longest occurrence
 	}
 
 	private String[] quoteAll(Collection<String> values) {
@@ -638,7 +688,8 @@ public class ReleaseInfo {
 
 			// map display language names for given locales
 			for (Locale language : displayLanguages) {
-				// make sure language name is properly normalized so accents and whatever don't break the regex pattern syntax
+				// make sure language name is properly normalized so accents and whatever don't
+				// break the regex pattern syntax
 				String languageName = Normalizer.normalize(locale.getDisplayLanguage(language), Form.NFKD);
 				languageMap.put(languageName.toLowerCase(), iso3locale);
 			}
@@ -650,7 +701,8 @@ public class ReleaseInfo {
 		languageMap.put("pb", brazil);
 		languageMap.put("pob", brazil);
 
-		// missing ISO 639-2 (B/T) locales (see https://github.com/TakahikoKawasaki/nv-i18n/blob/master/src/main/java/com/neovisionaries/i18n/LanguageAlpha3Code.java)
+		// missing ISO 639-2 (B/T) locales (see
+		// https://github.com/TakahikoKawasaki/nv-i18n/blob/master/src/main/java/com/neovisionaries/i18n/LanguageAlpha3Code.java)
 		languageMap.put("tib", new Locale("bod"));
 		languageMap.put("cze", new Locale("ces"));
 		languageMap.put("wel", new Locale("cym"));

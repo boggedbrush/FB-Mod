@@ -75,8 +75,10 @@ public class AutoDetection {
 	private static final Pattern SERIES_FOLDER_PATTERN = compile("TV.Shows|TV.Series|Season.\\d+", CASE_INSENSITIVE);
 	private static final Pattern ANIME_FOLDER_PATTERN = compile("Anime", CASE_INSENSITIVE);
 
-	private static final Pattern ABSOLUTE_EPISODE_PATTERN = compile("(?<!\\p{Alnum})E[P]?\\d{1,3}(?!\\p{Alnum})", CASE_INSENSITIVE);
-	private static final Pattern SERIES_EPISODE_PATTERN = compile("(?<!\\p{Alnum})(tv[sp]|Season\\D?\\d{1,2}|\\d{4}.S\\d{2})(?!\\p{Alnum})", CASE_INSENSITIVE);
+	private static final Pattern ABSOLUTE_EPISODE_PATTERN = compile("(?<!\\p{Alnum})E[P]?\\d{1,3}(?!\\p{Alnum})",
+			CASE_INSENSITIVE);
+	private static final Pattern SERIES_EPISODE_PATTERN = compile(
+			"(?<!\\p{Alnum})(tv[sp]|Season\\D?\\d{1,2}|\\d{4}.S\\d{2})(?!\\p{Alnum})", CASE_INSENSITIVE);
 	private static final Pattern ANIME_EPISODE_PATTERN = compile("^\\[[^\\]]+Subs\\]", CASE_INSENSITIVE);
 
 	private static final Pattern JAPANESE_AUDIO_LANGUAGE_PATTERN = compile("jpn|Japanese", CASE_INSENSITIVE);
@@ -101,7 +103,11 @@ public class AutoDetection {
 
 		Object metaInfo = xattr.getMetaInfo(f);
 		if (metaInfo instanceof Episode) {
-			return !AniDB.getIdentifier().equals(((Episode) metaInfo).getSeriesInfo().getDatabase()); // return true for known non-Anime Episode objects
+			return !AniDB.getIdentifier().equals(((Episode) metaInfo).getSeriesInfo().getDatabase()); // return true for
+																										// known
+																										// non-Anime
+																										// Episode
+																										// objects
 		}
 
 		return false;
@@ -112,25 +118,29 @@ public class AutoDetection {
 			return false;
 		}
 
-		if (anyMatch(f.getParentFile(), ANIME_FOLDER_PATTERN) || find(f.getName(), ANIME_EPISODE_PATTERN) || find(f.getName(), EMBEDDED_CHECKSUM)) {
+		if (anyMatch(f.getParentFile(), ANIME_FOLDER_PATTERN) || find(f.getName(), ANIME_EPISODE_PATTERN)
+				|| find(f.getName(), EMBEDDED_CHECKSUM)) {
 			return true;
 		}
 
 		if (VIDEO_FILES.accept(f) && f.length() > ONE_MEGABYTE) {
 			// check for Japanese audio or characteristic subtitles
 			try (MediaCharacteristics mi = MediaCharacteristicsParser.DEFAULT.open(f)) {
-				return mi.getDuration().toMinutes() < 60 || find(mi.getAudioLanguage(), JAPANESE_AUDIO_LANGUAGE_PATTERN) && find(mi.getSubtitleCodec(), JAPANESE_SUBTITLE_CODEC_PATTERN);
+				return mi.getDuration().toMinutes() < 60 || find(mi.getAudioLanguage(), JAPANESE_AUDIO_LANGUAGE_PATTERN)
+						&& find(mi.getSubtitleCodec(), JAPANESE_SUBTITLE_CODEC_PATTERN);
 			} catch (Exception e) {
 				debug.warning("Failed to read audio language: " + e.getMessage());
 			}
 		}
 
 		Object metaInfo = xattr.getMetaInfo(f);
-		return metaInfo instanceof Episode && AniDB.getIdentifier().equals(((Episode) metaInfo).getSeriesInfo().getDatabase());
+		return metaInfo instanceof Episode
+				&& AniDB.getIdentifier().equals(((Episode) metaInfo).getSeriesInfo().getDatabase());
 	}
 
 	public boolean anyMatch(File file, Pattern pattern) {
-		// episode characteristics override movie characteristics (e.g. episodes in ~/Movies folder which is considered a volume root)
+		// episode characteristics override movie characteristics (e.g. episodes in
+		// ~/Movies folder which is considered a volume root)
 		for (File f = file; f != null && !isVolumeRoot(f); f = f.getParentFile()) {
 			if (pattern.matcher(f.getName()).matches()) {
 				return true;
@@ -145,7 +155,20 @@ public class AutoDetection {
 		for (File file : files) {
 			try {
 				Group group = detectGroup(file);
-				groups.computeIfAbsent(group, g -> new LinkedHashSet<File>()).add(new File(file.getPath())); // use FastFile internally but do not expose to outside code that expects File objects
+				groups.computeIfAbsent(group, g -> new LinkedHashSet<File>()).add(new File(file.getPath())); // use
+																												// FastFile
+																												// internally
+																												// but
+																												// do
+																												// not
+																												// expose
+																												// to
+																												// outside
+																												// code
+																												// that
+																												// expects
+																												// File
+																												// objects
 			} catch (Exception e) {
 				debug.log(Level.SEVERE, e, e::toString);
 			}
@@ -157,13 +180,17 @@ public class AutoDetection {
 	public Map<Group, Set<File>> groupParallel(ExecutorService threadPool) {
 		Map<Group, Set<File>> groups = new LinkedHashMap<Group, Set<File>>();
 
-		stream(files).collect(toMap(f -> f, f -> threadPool.submit(() -> detectGroup(f)), (a, b) -> a, LinkedHashMap::new)).forEach((file, group) -> {
-			try {
-				groups.computeIfAbsent(group.get(), k -> new LinkedHashSet<File>()).add(new File(file.getPath())); // use FastFile internally but do not expose to outside code that expects File objects
-			} catch (Exception e) {
-				debug.log(Level.SEVERE, e.getMessage(), e);
-			}
-		});
+		stream(files)
+				.collect(toMap(f -> f, f -> threadPool.submit(() -> detectGroup(f)), (a, b) -> a, LinkedHashMap::new))
+				.forEach((file, group) -> {
+					try {
+						groups.computeIfAbsent(group.get(), k -> new LinkedHashSet<File>())
+								.add(new File(file.getPath())); // use FastFile internally but do not expose to outside
+																// code that expects File objects
+					} catch (Exception e) {
+						debug.log(Level.SEVERE, e.getMessage(), e);
+					}
+				});
 
 		return groups;
 	}
@@ -171,25 +198,31 @@ public class AutoDetection {
 	private Group detectGroup(File f) throws Exception {
 		Group group = new Group();
 
-		if (isMusic(f))
+		if (isMusic(f)) {
 			return group.music(f);
-		if (isMovie(f))
+		}
+		if (isMovie(f)) {
 			return group.movie(getMovieMatches(f));
-		if (isEpisode(f))
+		}
+		if (isEpisode(f)) {
 			return group.series(getSeriesMatches(f, false));
-		if (isAnime(f))
+		}
+		if (isAnime(f)) {
 			return group.anime(getSeriesMatches(f, true));
+		}
 
 		// ignore movie matches if filename looks like an episode
-		if (find(f.getName(), ABSOLUTE_EPISODE_PATTERN))
+		if (find(f.getName(), ABSOLUTE_EPISODE_PATTERN)) {
 			return group.series(getSeriesMatches(f, false));
+		}
 
 		// Movie VS Episode
 		List<Movie> m = getMovieMatches(f);
 		List<String> s = getSeriesMatches(f, false);
 
-		if (m.isEmpty() && s.isEmpty())
+		if (m.isEmpty() && s.isEmpty()) {
 			return group;
+		}
 		if (s.size() > 0 && m.isEmpty())
 			return group.series(s);
 		if (m.size() > 0 && s.isEmpty())
@@ -214,7 +247,8 @@ public class AutoDetection {
 	}
 
 	private List<File> getVideoFiles(File parent) {
-		return stream(files).filter(it -> parent.equals(it.getParentFile())).filter(VIDEO_FILES::accept).collect(toList());
+		return stream(files).filter(it -> parent.equals(it.getParentFile())).filter(VIDEO_FILES::accept)
+				.collect(toList());
 	}
 
 	private static final Pattern YEAR = compile("\\D(?:19|20)\\d{2}\\D");
@@ -372,7 +406,8 @@ public class AutoDetection {
 
 		public boolean similarNameNoNumbers() {
 			return Stream.of(dn, fn).anyMatch(it -> {
-				return find(it, mnm) && !find(after(it, mnm).orElse(it), EPISODE_NUMBERS) && getSimilarity(it, mn) >= 0.2f + getSimilarity(it, sn);
+				return find(it, mnm) && !find(after(it, mnm).orElse(it), EPISODE_NUMBERS)
+						&& getSimilarity(it, mn) >= 0.2f + getSimilarity(it, sn);
 			});
 		}
 
@@ -429,13 +464,15 @@ public class AutoDetection {
 		}
 
 		public Group series(List<String> names) {
-			put(Type.Series, names == null || names.isEmpty() ? null : replaceSpace(normalizePunctuation(names.get(0)).toLowerCase(), " ").trim());
+			put(Type.Series, names == null || names.isEmpty() ? null
+					: replaceSpace(normalizePunctuation(names.get(0)).toLowerCase(), " ").trim());
 			return this;
 
 		}
 
 		public Group anime(List<String> names) {
-			put(Type.Anime, names == null || names.isEmpty() ? null : replaceSpace(normalizePunctuation(names.get(0)).toLowerCase(), " ").trim());
+			put(Type.Anime, names == null || names.isEmpty() ? null
+					: replaceSpace(normalizePunctuation(names.get(0)).toLowerCase(), " ").trim());
 			return this;
 
 		}

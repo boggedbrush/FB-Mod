@@ -29,13 +29,34 @@ public final class ResourceManager {
 
 	private static final Map<String, Icon> cache = synchronizedMap(new HashMap<String, Icon>(256));
 
+	// Bright color for dark mode icons (original value)
+	private static final java.awt.Color DARK_MODE_ICON_COLOR = new java.awt.Color(0xE0E0E0);
+
+	// Color filter to adapt SVG icons to light/dark themes
+	private static com.formdev.flatlaf.extras.FlatSVGIcon.ColorFilter getThemeColorFilter() {
+		return new com.formdev.flatlaf.extras.FlatSVGIcon.ColorFilter(color -> {
+			// Check if we're in dark mode by looking at the LAF name
+			String lafName = javax.swing.UIManager.getLookAndFeel().getName().toLowerCase();
+			if (lafName.contains("dark")) {
+				// Use bright color for dark mode
+				return DARK_MODE_ICON_COLOR;
+			} else {
+				// Use theme foreground for light mode
+				return javax.swing.UIManager.getColor("Label.foreground");
+			}
+		});
+	}
+
 	public static Icon getIcon(String name) {
 		return cache.computeIfAbsent(name, i -> {
 			// try loading SVG first
 			URL svgResource = ResourceManager.class.getResource("resources/" + i + ".svg");
 			if (svgResource != null) {
 				try {
-					return new com.formdev.flatlaf.extras.FlatSVGIcon(svgResource.toURI());
+					com.formdev.flatlaf.extras.FlatSVGIcon icon = new com.formdev.flatlaf.extras.FlatSVGIcon(
+							svgResource.toURI());
+					icon.setColorFilter(getThemeColorFilter());
+					return icon;
 				} catch (Throwable e) {
 					e.printStackTrace();
 				}

@@ -259,6 +259,16 @@ public class Main {
 		try {
 			if ("Dark".equalsIgnoreCase(theme)) {
 				com.formdev.flatlaf.FlatDarkLaf.setup();
+				// Make dark mode background darker
+				java.awt.Color darkerBg = new java.awt.Color(0x1E1E1E);
+				java.awt.Color darkerBg2 = new java.awt.Color(0x252525);
+				javax.swing.UIManager.put("Panel.background", darkerBg);
+				javax.swing.UIManager.put("List.background", darkerBg2);
+				javax.swing.UIManager.put("Tree.background", darkerBg2);
+				javax.swing.UIManager.put("Table.background", darkerBg2);
+				javax.swing.UIManager.put("TextArea.background", darkerBg2);
+				javax.swing.UIManager.put("TextField.background", darkerBg2);
+				javax.swing.UIManager.put("ScrollPane.background", darkerBg);
 				// Enable dark title bar on macOS
 				if (com.formdev.flatlaf.util.SystemInfo.isMacOS) {
 					System.setProperty("apple.awt.application.appearance", "NSAppearanceNameDarkAqua");
@@ -288,6 +298,16 @@ public class Main {
 					if (isDark) {
 						log.config("Detected macOS Dark Mode");
 						com.formdev.flatlaf.themes.FlatMacDarkLaf.setup();
+						// Make dark mode background darker
+						java.awt.Color darkerBg = new java.awt.Color(0x1E1E1E);
+						java.awt.Color darkerBg2 = new java.awt.Color(0x252525);
+						javax.swing.UIManager.put("Panel.background", darkerBg);
+						javax.swing.UIManager.put("List.background", darkerBg2);
+						javax.swing.UIManager.put("Tree.background", darkerBg2);
+						javax.swing.UIManager.put("Table.background", darkerBg2);
+						javax.swing.UIManager.put("TextArea.background", darkerBg2);
+						javax.swing.UIManager.put("TextField.background", darkerBg2);
+						javax.swing.UIManager.put("ScrollPane.background", darkerBg);
 					} else {
 						com.formdev.flatlaf.themes.FlatMacLightLaf.setup();
 					}

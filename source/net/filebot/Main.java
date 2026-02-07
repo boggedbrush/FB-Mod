@@ -58,6 +58,21 @@ public class Main {
 
 	public static void main(String[] argv) {
 		try {
+			// Set macOS appearance BEFORE any AWT/Swing initialization
+			// This must happen before any AWT classes are loaded
+			if (System.getProperty("os.name", "").toLowerCase().contains("mac")) {
+				try {
+					// Check if dark mode is enabled
+					Process p = Runtime.getRuntime()
+							.exec(new String[] { "defaults", "read", "-g", "AppleInterfaceStyle" });
+					boolean isDark = (p.waitFor() == 0);
+					System.setProperty("apple.awt.application.appearance",
+							isDark ? "NSAppearanceNameDarkAqua" : "NSAppearanceNameAqua");
+				} catch (Exception e) {
+					// Ignore - will use default appearance
+				}
+			}
+
 			// parse arguments
 			ArgumentBean args = ArgumentBean.parse(argv);
 			RuntimeConfiguration.configure(args);
@@ -244,8 +259,16 @@ public class Main {
 		try {
 			if ("Dark".equalsIgnoreCase(theme)) {
 				com.formdev.flatlaf.FlatDarkLaf.setup();
+				// Enable dark title bar on macOS
+				if (com.formdev.flatlaf.util.SystemInfo.isMacOS) {
+					System.setProperty("apple.awt.application.appearance", "NSAppearanceNameDarkAqua");
+				}
 			} else if ("Light".equalsIgnoreCase(theme)) {
 				com.formdev.flatlaf.FlatLightLaf.setup();
+				// Ensure light title bar on macOS
+				if (com.formdev.flatlaf.util.SystemInfo.isMacOS) {
+					System.setProperty("apple.awt.application.appearance", "NSAppearanceNameAqua");
+				}
 			} else {
 				// System preference (default)
 				if (com.formdev.flatlaf.util.SystemInfo.isMacOS) {
@@ -270,9 +293,9 @@ public class Main {
 					}
 
 					if (com.formdev.flatlaf.util.SystemInfo.isMacFullWindowContentSupported) {
-						// enables transparent title bar
-						// System.setProperty("apple.awt.application.appearance",
-						// isDark ? "NSAppearanceNameDarkAqua" : "system");
+						// enables dark title bar for all windows
+						System.setProperty("apple.awt.application.appearance",
+								isDark ? "NSAppearanceNameDarkAqua" : "NSAppearanceNameAqua");
 					}
 				} else {
 					com.formdev.flatlaf.FlatLaf.setup(new com.formdev.flatlaf.themes.FlatMacLightLaf());
@@ -302,6 +325,13 @@ public class Main {
 		}
 
 		JFrame frame = panels.length > 1 ? new MainFrame(panels) : new SinglePanelFrame(panels[0]);
+
+		// Apply macOS dark title bar if using dark theme
+		if (com.formdev.flatlaf.util.SystemInfo.isMacOS) {
+			boolean isDarkTheme = javax.swing.UIManager.getLookAndFeel().getName().toLowerCase().contains("dark");
+			frame.getRootPane().putClientProperty("apple.awt.windowDarkAppearance", isDarkTheme);
+		}
+
 		try {
 			restoreWindowBounds(frame, Settings.forPackage(MainFrame.class)); // restore previous size and location
 		} catch (Exception e) {

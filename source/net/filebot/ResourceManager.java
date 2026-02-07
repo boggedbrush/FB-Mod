@@ -31,6 +31,16 @@ public final class ResourceManager {
 
 	public static Icon getIcon(String name) {
 		return cache.computeIfAbsent(name, i -> {
+			// try loading SVG first
+			URL svgResource = ResourceManager.class.getResource("resources/" + i + ".svg");
+			if (svgResource != null) {
+				try {
+					return new com.formdev.flatlaf.extras.FlatSVGIcon(svgResource.toURI());
+				} catch (Throwable e) {
+					e.printStackTrace();
+				}
+			}
+
 			// load image
 			URL[] resource = getMultiResolutionImageResource(i);
 			if (resource.length > 0) {
@@ -47,7 +57,8 @@ public final class ResourceManager {
 	}
 
 	public static List<Image> getApplicationIconImages() {
-		return Stream.of("window.icon16", "window.icon64").map(ResourceManager::getMultiResolutionImageResource).map(ResourceManager::getMultiResolutionImage).collect(toList());
+		return Stream.of("window.icon16", "window.icon64").map(ResourceManager::getMultiResolutionImageResource)
+				.map(ResourceManager::getMultiResolutionImage).collect(toList());
 	}
 
 	public static Icon getFlagIcon(String languageCode) {
@@ -78,14 +89,16 @@ public final class ResourceManager {
 	}
 
 	private static URL[] getMultiResolutionImageResource(String name) {
-		return Stream.of(name, name + "@2x").map(ResourceManager::getImageResource).filter(Objects::nonNull).toArray(URL[]::new);
+		return Stream.of(name, name + "@2x").map(ResourceManager::getImageResource).filter(Objects::nonNull)
+				.toArray(URL[]::new);
 	}
 
 	private static URL getImageResource(String name) {
 		return ResourceManager.class.getResource("resources/" + name + ".png");
 	}
 
-	private static final float PRIMARY_SCALE_FACTOR = SystemProperty.of("sun.java2d.uiScale", Float::parseFloat, Toolkit.getDefaultToolkit().getScreenResolution() / 96f).get();
+	private static final float PRIMARY_SCALE_FACTOR = SystemProperty
+			.of("sun.java2d.uiScale", Float::parseFloat, Toolkit.getDefaultToolkit().getScreenResolution() / 96f).get();
 
 	private static BufferedImage scale(float scale, BufferedImage image) {
 		int w = (int) (scale * image.getWidth());

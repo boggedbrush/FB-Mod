@@ -56,12 +56,11 @@ class ExtractTool extends Tool<TableModel> {
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
 		table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
-		table.setBackground(Color.white);
-		table.setGridColor(new Color(0xEEEEEE));
 		table.setRowHeight(25);
 
 		JScrollPane tableScrollPane = new JScrollPane(table);
-		tableScrollPane.setBorder(new SeparatorBorder(2, new Color(0, 0, 0, 90), GradientStyle.TOP_TO_BOTTOM, SeparatorBorder.Position.BOTTOM));
+		tableScrollPane.setBorder(new SeparatorBorder(2, new Color(0, 0, 0, 90), GradientStyle.TOP_TO_BOTTOM,
+				SeparatorBorder.Position.BOTTOM));
 
 		setLayout(new MigLayout("insets 0, nogrid, fill", "align center", "[fill][pref!]"));
 		add(new LoadingOverlayPane(tableScrollPane, this, "25px", "30px"), "grow, wrap");
@@ -156,12 +155,12 @@ class ExtractTool extends Tool<TableModel> {
 		@Override
 		public String getColumnName(int column) {
 			switch (column) {
-			case 0:
-				return "File";
-			case 1:
-				return "Path";
-			case 2:
-				return "Size";
+				case 0:
+					return "File";
+				case 1:
+					return "Path";
+				case 2:
+					return "Size";
 			}
 			return null;
 		}
@@ -169,15 +168,15 @@ class ExtractTool extends Tool<TableModel> {
 		@Override
 		public Object getValueAt(int row, int column) {
 			switch (column) {
-			case 0:
-				return data[row].entry.getName();
-			case 1:
-				File root = new File(data[row].archive.getName());
-				File prefix = data[row].entry.toFile().getParentFile();
-				File path = (prefix == null) ? root : new File(root, prefix.getPath());
-				return normalizePathSeparators(path.getPath());
-			case 2:
-				return FileUtilities.formatSize(data[row].entry.getLength());
+				case 0:
+					return data[row].entry.getName();
+				case 1:
+					File root = new File(data[row].archive.getName());
+					File prefix = data[row].entry.toFile().getParentFile();
+					File path = (prefix == null) ? root : new File(root, prefix.getPath());
+					return normalizePathSeparators(path.getPath());
+				case 2:
+					return FileUtilities.formatSize(data[row].entry.getLength());
 			}
 
 			return null;
@@ -194,7 +193,8 @@ class ExtractTool extends Tool<TableModel> {
 		private final boolean forceExtractAll;
 		private final ConflictAction conflictAction;
 
-		public ExtractWorker(Collection<File> archives, File outputFolder, FileFilter filter, boolean forceExtractAll, ConflictAction conflictAction) {
+		public ExtractWorker(Collection<File> archives, File outputFolder, FileFilter filter, boolean forceExtractAll,
+				ConflictAction conflictAction) {
 			this.archives = archives.toArray(new File[archives.size()]);
 			this.outputFolder = outputFolder;
 			this.filter = filter;
@@ -203,7 +203,8 @@ class ExtractTool extends Tool<TableModel> {
 		}
 
 		@Override
-		public Void call(Consumer<String> message, BiConsumer<Long, Long> progress, Supplier<Boolean> cancelled) throws Exception {
+		public Void call(Consumer<String> message, BiConsumer<Long, Long> progress, Supplier<Boolean> cancelled)
+				throws Exception {
 			for (File file : archives) {
 				try {
 					// update progress dialog

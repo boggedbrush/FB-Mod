@@ -48,7 +48,8 @@ import net.miginfocom.swing.MigLayout;
 
 public class MainFrame extends JFrame {
 
-	private static final PreferencesEntry<String> persistentSelectedPanel = Settings.forPackage(MainFrame.class).entry("panel.selected").defaultValue("0");
+	private static final PreferencesEntry<String> persistentSelectedPanel = Settings.forPackage(MainFrame.class)
+			.entry("panel.selected").defaultValue("0");
 
 	private JList selectionList;
 	private HeaderPanel headerPanel;
@@ -59,14 +60,16 @@ public class MainFrame extends JFrame {
 		selectionList = new PanelSelectionList(panels);
 		headerPanel = new HeaderPanel();
 
-		JScrollPane selectionListScrollPane = new JScrollPane(selectionList, VERTICAL_SCROLLBAR_NEVER, HORIZONTAL_SCROLLBAR_NEVER);
+		JScrollPane selectionListScrollPane = new JScrollPane(selectionList, VERTICAL_SCROLLBAR_NEVER,
+				HORIZONTAL_SCROLLBAR_NEVER);
 		selectionListScrollPane.setOpaque(false);
-		selectionListScrollPane.setBorder(createCompoundBorder(new ShadowBorder(), isMacApp() ? createLineBorder(new Color(0x809DB8), 1, false) : selectionListScrollPane.getBorder()));
+		selectionListScrollPane.setBorder(createEmptyBorder());
 
 		headerPanel.getTitleLabel().setBorder(createEmptyBorder(8, 90, 10, 0));
 
 		JComponent c = (JComponent) getContentPane();
-		c.setLayout(new MigLayout("insets 0, fill, hidemode 3", String.format("%dpx[fill]", isUbuntuApp() ? 110 : 95), "fill"));
+		c.setLayout(new MigLayout("insets 0, fill, hidemode 3", String.format("%dpx[fill]", isUbuntuApp() ? 110 : 95),
+				"fill"));
 
 		c.add(selectionListScrollPane, "pos 6px 10px n 100%-12px");
 		c.add(headerPanel, "growx, dock north");
@@ -97,12 +100,13 @@ public class MainFrame extends JFrame {
 		setMinimumSize(new Dimension(900, 340));
 
 		// KEYBOARD SHORTCUTS
-		installAction(getRootPane(), getKeyStroke(VK_DELETE, CTRL_DOWN_MASK | SHIFT_DOWN_MASK), newAction("Clear Cache", evt -> {
-			withWaitCursor(getRootPane(), () -> {
-				CacheManager.getInstance().clearAll();
-				log.info("Cache has been cleared");
-			});
-		}));
+		installAction(getRootPane(), getKeyStroke(VK_DELETE, CTRL_DOWN_MASK | SHIFT_DOWN_MASK),
+				newAction("Clear Cache", evt -> {
+					withWaitCursor(getRootPane(), () -> {
+						CacheManager.getInstance().clearAll();
+						log.info("Cache has been cleared");
+					});
+				}));
 
 		installAction(getRootPane(), getKeyStroke(VK_F5, 0), newAction("Run", evt -> {
 			withWaitCursor(getRootPane(), () -> {
@@ -128,7 +132,8 @@ public class MainFrame extends JFrame {
 			});
 		}));
 
-		installAction(this.getRootPane(), getKeyStroke(VK_F1, 0), newAction("Help", evt -> openURI(getEmbeddedHelpURL())));
+		installAction(this.getRootPane(), getKeyStroke(VK_F1, 0),
+				newAction("Help", evt -> openURI(getEmbeddedHelpURL())));
 
 		SwingEventBus.getInstance().register(this);
 	}
@@ -252,7 +257,7 @@ public class MainFrame extends JFrame {
 	private static class PanelCellRenderer extends DefaultFancyListCellRenderer {
 
 		public PanelCellRenderer() {
-			super(10, 0, new Color(0x163264));
+			super(10, 0, null);
 
 			// center labels in list
 			setLayout(new FlowLayout(FlowLayout.CENTER, 0, 0));
@@ -264,7 +269,8 @@ public class MainFrame extends JFrame {
 		}
 
 		@Override
-		public void configureListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+		public void configureListCellRendererComponent(JList list, Object value, int index, boolean isSelected,
+				boolean cellHasFocus) {
 			super.configureListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
 			PanelBuilder panel = (PanelBuilder) value;

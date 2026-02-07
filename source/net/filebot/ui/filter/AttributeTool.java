@@ -37,8 +37,6 @@ class AttributeTool extends Tool<TableModel> {
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
 		table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
-		table.setBackground(Color.white);
-		table.setGridColor(new Color(0xEEEEEE));
 		table.setRowHeight(25);
 
 		JScrollPane scrollPane = new JScrollPane(table);
@@ -65,12 +63,14 @@ class AttributeTool extends Tool<TableModel> {
 			if (metaObject instanceof Episode) {
 				SeriesInfo seriesInfo = ((Episode) metaObject).getSeriesInfo();
 				if (seriesInfo != null) {
-					model.addRow(String.format("%s::%d", seriesInfo.getDatabase(), seriesInfo.getId()), metaObject, originalName, file);
+					model.addRow(String.format("%s::%d", seriesInfo.getDatabase(), seriesInfo.getId()), metaObject,
+							originalName, file);
 				}
 			} else if (metaObject instanceof Movie) {
 				Movie movie = (Movie) metaObject;
 				if (movie.getTmdbId() > 0) {
-					model.addRow(String.format("%s::%d", "TheMovieDB", movie.getTmdbId()), metaObject, originalName, file);
+					model.addRow(String.format("%s::%d", "TheMovieDB", movie.getTmdbId()), metaObject, originalName,
+							file);
 				} else if (movie.getImdbId() > 0) {
 					model.addRow(String.format("%s::%d", "OMDb", movie.getImdbId()), metaObject, originalName, file);
 				}
@@ -108,14 +108,14 @@ class AttributeTool extends Tool<TableModel> {
 		@Override
 		public String getColumnName(int column) {
 			switch (column) {
-			case 0:
-				return "Meta ID";
-			case 1:
-				return "Meta Attributes";
-			case 2:
-				return "Original Name";
-			case 3:
-				return "File Path";
+				case 0:
+					return "Meta ID";
+				case 1:
+					return "Meta Attributes";
+				case 2:
+					return "Original Name";
+				case 3:
+					return "File Path";
 			}
 			return null;
 		}

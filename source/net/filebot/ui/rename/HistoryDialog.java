@@ -111,13 +111,15 @@ class HistoryDialog extends JDialog {
 
 		JPanel header = new JPanel(new MigLayout("insets dialog, nogrid, fillx"));
 
-		header.setBackground(Color.white);
-		header.setBorder(new SeparatorBorder(1, new Color(0xB4B4B4), new Color(0xACACAC), GradientStyle.LEFT_TO_RIGHT, Position.BOTTOM));
+		// header.setBackground(Color.white);
+		header.setBorder(new SeparatorBorder(1, new Color(0xB4B4B4), new Color(0xACACAC), GradientStyle.LEFT_TO_RIGHT,
+				Position.BOTTOM));
 
 		header.add(title, "wrap");
 		header.add(infoLabel, "gap indent*2, wrap");
 
-		JPanel content = new JPanel(new MigLayout("fill, insets dialog, nogrid, novisualpadding", "", "[pref!][150px:pref:200px][200px:pref:max, grow][pref!]"));
+		JPanel content = new JPanel(new MigLayout("fill, insets dialog, nogrid, novisualpadding", "",
+				"[pref!][150px:pref:200px][200px:pref:max, grow][pref!]"));
 
 		content.add(new JLabel("Filter:"), "gap indent:push");
 		content.add(filterEditor, "wmin 120px, gap rel");
@@ -126,10 +128,12 @@ class HistoryDialog extends JDialog {
 		content.add(createScrollPaneGroup("Sequences", sequenceTable), "growx, wrap paragraph");
 		content.add(createScrollPaneGroup("Elements", elementTable), "growx, wrap paragraph");
 
-		Action importAction = new LoadAction("Import", ResourceManager.getIcon("action.load"), this::getTransferablePolicy);
+		Action importAction = new LoadAction("Import", ResourceManager.getIcon("action.load"),
+				this::getTransferablePolicy);
 
 		content.add(new JButton(importAction), "wmin button, hmin 25px, gap indent, sg button");
-		content.add(new JButton(new SaveAction("Export", ResourceManager.getIcon("action.save"), exportHandler)), "gap rel, sg button");
+		content.add(new JButton(new SaveAction("Export", ResourceManager.getIcon("action.save"), exportHandler)),
+				"gap rel, sg button");
 		content.add(new JButton(new RevertCurrentSelectionAction()), "gap left unrel:push, sgy button");
 		content.add(new JButton(closeAction), "gap left unrel, gap right indent, sg button");
 
@@ -178,8 +182,10 @@ class HistoryDialog extends JDialog {
 			private final DateFormat format = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT);
 
 			@Override
-			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-				return super.getTableCellRendererComponent(table, format.format(value), isSelected, hasFocus, row, column);
+			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+					boolean hasFocus, int row, int column) {
+				return super.getTableCellRendererComponent(table, format.format(value), isSelected, hasFocus, row,
+						column);
 			}
 		});
 
@@ -187,7 +193,8 @@ class HistoryDialog extends JDialog {
 		elementTable.setDefaultRenderer(String.class, new DefaultTableCellRenderer() {
 
 			@Override
-			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
+			public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+					boolean hasFocus, int row, int column) {
 				super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
 
 				// reset icon
@@ -272,7 +279,8 @@ class HistoryDialog extends JDialog {
 				since = sequence.date();
 		}
 
-		infoLabel.setText(String.format("A total of %,d files have been renamed since %s.", count, DateFormat.getDateInstance().format(since)));
+		infoLabel.setText(String.format("A total of %,d files have been renamed since %s.", count,
+				DateFormat.getDateInstance().format(since)));
 	}
 
 	private JScrollPane createScrollPaneGroup(String title, JComponent component) {
@@ -288,7 +296,7 @@ class HistoryDialog extends JDialog {
 
 	private JTable createTable(TableModel model) {
 		JTable table = new JTable(model);
-		table.setBackground(Color.white);
+		// table.setBackground(Color.white);
 		table.setAutoCreateRowSorter(true);
 		table.setFillsViewportHeight(true);
 
@@ -344,7 +352,8 @@ class HistoryDialog extends JDialog {
 				}
 
 				if (!table.getSelectionModel().isSelectedIndex(clickedRow)) {
-					// if clicked row is not selected, set selection to this row (and deselect all other currently selected row)
+					// if clicked row is not selected, set selection to this row (and deselect all
+					// other currently selected row)
 					table.getSelectionModel().setSelectionInterval(clickedRow, clickedRow);
 				}
 
@@ -435,12 +444,12 @@ class HistoryDialog extends JDialog {
 			@Override
 			public String toString() {
 				switch (this) {
-				case Revert:
-					return "Revert";
-				case ChangeDirectory:
-					return "Change Directory";
-				default:
-					return "Cancel";
+					case Revert:
+						return "Revert";
+					case ChangeDirectory:
+						return "Change Directory";
+					default:
+						return "Cancel";
 				}
 			}
 		}
@@ -482,8 +491,10 @@ class HistoryDialog extends JDialog {
 					missingFilesComponent.setCellRenderer(new DefaultListCellRenderer() {
 
 						@Override
-						public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-							return super.getListCellRendererComponent(list, ((File) value).getName(), index, isSelected, false);
+						public Component getListCellRendererComponent(JList list, Object value, int index,
+								boolean isSelected, boolean cellHasFocus) {
+							return super.getListCellRendererComponent(list, ((File) value).getName(), index, isSelected,
+									false);
 						}
 					});
 
@@ -492,7 +503,8 @@ class HistoryDialog extends JDialog {
 					options = EnumSet.of(Option.ChangeDirectory, Option.Cancel);
 				}
 
-				JOptionPane pane = new JOptionPane(message, type, YES_NO_CANCEL_OPTION, null, options.toArray(), Option.Cancel);
+				JOptionPane pane = new JOptionPane(message, type, YES_NO_CANCEL_OPTION, null, options.toArray(),
+						Option.Cancel);
 
 				// display option dialog
 				pane.createDialog(parent(), "Revert").setVisible(true);
@@ -515,7 +527,8 @@ class HistoryDialog extends JDialog {
 		private void revert(File directory, List<Element> elements) {
 			Map<File, File> renamePlan = getRenameMap(directory);
 			if (isMacSandbox()) {
-				if (!MacAppUtilities.askUnlockFolders(parent(), Stream.of(renamePlan.keySet(), renamePlan.values()).flatMap(c -> c.stream()).collect(toList()))) {
+				if (!MacAppUtilities.askUnlockFolders(parent(), Stream.of(renamePlan.keySet(), renamePlan.values())
+						.flatMap(c -> c.stream()).collect(toList()))) {
 					return;
 				}
 			}
@@ -557,7 +570,8 @@ class HistoryDialog extends JDialog {
 				File from = new File(element.to());
 				File to = new File(element.from());
 
-				// resolve against given directory or against the original base directory if the path is not absolute
+				// resolve against given directory or against the original base directory if the
+				// path is not absolute
 				if (!from.isAbsolute())
 					from = new File(dir, directory == null ? from.getPath() : from.getName());
 				if (!to.isAbsolute())
@@ -700,12 +714,12 @@ class HistoryDialog extends JDialog {
 		@Override
 		public String getColumnName(int column) {
 			switch (column) {
-			case 0:
-				return "#";
-			case 1:
-				return "Name";
-			case 2:
-				return "Date";
+				case 0:
+					return "#";
+				case 1:
+					return "Name";
+				case 2:
+					return "Date";
 			}
 			return null;
 		}
@@ -723,12 +737,12 @@ class HistoryDialog extends JDialog {
 		@Override
 		public Class<?> getColumnClass(int column) {
 			switch (column) {
-			case 0:
-				return Integer.class;
-			case 1:
-				return String.class;
-			case 2:
-				return Date.class;
+				case 0:
+					return Integer.class;
+				case 1:
+					return String.class;
+				case 2:
+					return Date.class;
 			}
 			return null;
 		}
@@ -736,12 +750,12 @@ class HistoryDialog extends JDialog {
 		@Override
 		public Object getValueAt(int row, int column) {
 			switch (column) {
-			case 0:
-				return row + 1;
-			case 1:
-				return getName(data.get(row));
-			case 2:
-				return data.get(row).date();
+				case 0:
+					return row + 1;
+				case 1:
+					return getName(data.get(row));
+				case 2:
+					return data.get(row).date();
 			}
 			return null;
 		}
@@ -783,16 +797,16 @@ class HistoryDialog extends JDialog {
 		@Override
 		public String getColumnName(int column) {
 			switch (column) {
-			case 0:
-				return "#";
-			case 1:
-				return "New Name";
-			case 2:
-				return "Original Name";
-			case 3:
-				return "New Folder";
-			case 4:
-				return "Original Folder";
+				case 0:
+					return "#";
+				case 1:
+					return "New Name";
+				case 2:
+					return "Original Name";
+				case 3:
+					return "New Folder";
+				case 4:
+					return "Original Folder";
 			}
 			return null;
 		}
@@ -810,16 +824,16 @@ class HistoryDialog extends JDialog {
 		@Override
 		public Class<?> getColumnClass(int column) {
 			switch (column) {
-			case 0:
-				return Integer.class;
-			case 1:
-				return String.class;
-			case 2:
-				return String.class;
-			case 3:
-				return File.class;
-			case 4:
-				return File.class;
+				case 0:
+					return Integer.class;
+				case 1:
+					return String.class;
+				case 2:
+					return String.class;
+				case 3:
+					return File.class;
+				case 4:
+					return File.class;
 			}
 			return null;
 		}
@@ -827,18 +841,18 @@ class HistoryDialog extends JDialog {
 		@Override
 		public Object getValueAt(int row, int column) {
 			switch (column) {
-			case 0:
-				return row + 1;
-			case 1:
-				return new File(data.get(row).to()).getName();
-			case 2:
-				return data.get(row).from();
-			case 3:
-				return new File(data.get(row).to()).getParentFile();
-			case 4:
-				return data.get(row).dir();
-			default:
-				return null;
+				case 0:
+					return row + 1;
+				case 1:
+					return new File(data.get(row).to()).getName();
+				case 2:
+					return data.get(row).from();
+				case 3:
+					return new File(data.get(row).to()).getParentFile();
+				case 4:
+					return data.get(row).dir();
+				default:
+					return null;
 			}
 		}
 

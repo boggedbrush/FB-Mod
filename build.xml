@@ -325,7 +325,10 @@
 
 		<!-- static resources -->
 		<jar destfile="${dir.dist}/lib/${package.name}-resources.jar" index="yes" indexMetaInf="yes" compress="no">
-			<fileset dir="${dir.source}" includes="**/*.png" />
+			<fileset dir="${dir.source}">
+				<include name="**/*.png" />
+				<include name="**/*.svg" />
+			</fileset>
 		</jar>
 
 		<!-- select jar dependencies -->
@@ -356,6 +359,7 @@
 			<fileset dir="${dir.source}">
 				<exclude name="**/*.java" />
 				<exclude name="**/*.png" />
+				<exclude name="**/*.svg" />
 				<exclude name="**/*.properties" />
 			</fileset>
 		</copy>

@@ -27,15 +27,12 @@ public class HeaderPanel extends JComponent {
 
 	public HeaderPanel() {
 		setLayout(new BorderLayout());
-		setBackground(Color.WHITE);
 
 		JPanel centerPanel = new JPanel(new BorderLayout());
 		centerPanel.setOpaque(false);
 
 		titleLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		titleLabel.setVerticalAlignment(SwingConstants.CENTER);
-		titleLabel.setOpaque(false);
-		titleLabel.setForeground(new Color(0x101010));
 		titleLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 24));
 
 		centerPanel.setBorder(createEmptyBorder());
@@ -43,7 +40,8 @@ public class HeaderPanel extends JComponent {
 
 		add(centerPanel, BorderLayout.CENTER);
 
-		setBorder(new SeparatorBorder(1, new Color(0xB4B4B4), new Color(0xACACAC), GradientStyle.LEFT_TO_RIGHT, Position.BOTTOM));
+		setBorder(new javax.swing.border.MatteBorder(0, 0, 1, 0,
+				javax.swing.UIManager.getColor("Component.borderColor")));
 	}
 
 	public void setTitle(String title) {
@@ -52,16 +50,6 @@ public class HeaderPanel extends JComponent {
 
 	public JLabel getTitleLabel() {
 		return titleLabel;
-	}
-
-	@Override
-	protected void paintComponent(Graphics g) {
-		Graphics2D g2d = (Graphics2D) g;
-
-		LinearGradientPaint paint = new LinearGradientPaint(0, 0, getWidth(), 0, gradientFractions, gradientColors);
-
-		g2d.setPaint(paint);
-		g2d.fill(getBounds());
 	}
 
 }

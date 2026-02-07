@@ -38,6 +38,10 @@
 		<!-- JavaFX -->
 		<dependency rev="9.0.0" org="org.controlsfx" name="controlsfx" />
 
+		<!-- Look and Feel -->
+		<dependency rev="3.5.4" org="com.formdev" name="flatlaf" />
+		<dependency rev="3.5.4" org="com.formdev" name="flatlaf-extras" />
+
 
 		<!-- Apache Groovy -->
 		<dependency rev="2.5.23" org="org.codehaus.groovy" name="groovy" />

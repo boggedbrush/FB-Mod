@@ -4,6 +4,9 @@ ivy/jar/miglayout-core.jar
 ivy/jar/miglayout-swing.jar
 ivy/jar/glazedlists_java16.jar
 ivy/jar/controlsfx.jar
+ivy/jar/flatlaf.jar
+ivy/jar/flatlaf-extras.jar
+ivy/jar/jsvg.jar
 ivy/jar/rsyntaxtextarea.jar
 ivy/jar/autocomplete.jar
 ivy/jar/lanterna.jar

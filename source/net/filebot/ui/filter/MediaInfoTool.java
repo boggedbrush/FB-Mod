@@ -42,8 +42,6 @@ class MediaInfoTool extends Tool<TableModel> {
 		table.setCellSelectionEnabled(true);
 		table.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 
-		table.setBackground(Color.white);
-		table.setGridColor(new Color(0xEEEEEE));
 		table.setRowHeight(25);
 
 		JScrollPane scrollPane = new JScrollPane(table);
@@ -69,7 +67,8 @@ class MediaInfoTool extends Tool<TableModel> {
 					mi.snapshot().forEach((kind, streams) -> {
 						IntStream.range(0, streams.size()).forEach(i -> {
 							streams.get(i).forEach((name, value) -> {
-								String[] values = data.computeIfAbsent(new MediaInfoKey(kind, i, name), k -> new String[files.size()]);
+								String[] values = data.computeIfAbsent(new MediaInfoKey(kind, i, name),
+										k -> new String[files.size()]);
 								values[f] = value;
 							});
 						});
@@ -92,7 +91,8 @@ class MediaInfoTool extends Tool<TableModel> {
 	@Override
 	protected void setModel(TableModel model) {
 		table.setModel(model);
-		table.setAutoResizeMode(table.getRowCount() > 0 ? JTable.AUTO_RESIZE_OFF : JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
+		table.setAutoResizeMode(
+				table.getRowCount() > 0 ? JTable.AUTO_RESIZE_OFF : JTable.AUTO_RESIZE_SUBSEQUENT_COLUMNS);
 
 		TableColumnModel columnModel = table.getColumnModel();
 		IntStream.range(0, columnModel.getColumnCount()).forEach(i -> columnModel.getColumn(i).setMinWidth(150));
@@ -181,10 +181,10 @@ class MediaInfoTool extends Tool<TableModel> {
 		@Override
 		public String getColumnName(int column) {
 			switch (column) {
-			case 0:
-				return "File";
-			default:
-				return keys[column - getHeaderColumnCount()].toString();
+				case 0:
+					return "File";
+				default:
+					return keys[column - getHeaderColumnCount()].toString();
 			}
 		}
 
@@ -208,7 +208,8 @@ class MediaInfoTool extends Tool<TableModel> {
 				return columnClass[c];
 			}
 
-			if (IntStream.range(0, files.length).mapToObj(i -> values[c][i]).filter(Objects::nonNull).allMatch(this::isNumber)) {
+			if (IntStream.range(0, files.length).mapToObj(i -> values[c][i]).filter(Objects::nonNull)
+					.allMatch(this::isNumber)) {
 				columnClass[c] = Number.class;
 				return columnClass[c];
 			}
@@ -225,10 +226,10 @@ class MediaInfoTool extends Tool<TableModel> {
 		@Override
 		public String getValueAt(int row, int column) {
 			switch (column) {
-			case 0:
-				return files[row];
-			default:
-				return values[column - getHeaderColumnCount()][row];
+				case 0:
+					return files[row];
+				default:
+					return values[column - getHeaderColumnCount()][row];
 			}
 		}
 

@@ -47,6 +47,8 @@ public class FileBotList<E> extends JComponent {
 
 		SwingUI.installAction(this, KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), removeHook);
 		SwingUI.installAction(this, KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, KeyEvent.ALT_DOWN_MASK), removeHook);
+
+		listScrollPane.getViewport().setBackground(list.getBackground());
 	}
 
 	public EventList<E> getModel() {

@@ -22,9 +22,6 @@ public class HistoryPanel extends JPanel {
 	public HistoryPanel() {
 		super(new MigLayout("fillx, insets 10 30 10 50, wrap 3"));
 
-		setBackground(Color.WHITE);
-		setOpaque(true);
-
 		setupHeader();
 	}
 
@@ -42,12 +39,12 @@ public class HistoryPanel extends JPanel {
 
 	private String getHeaderConstraint(int headerIndex) {
 		switch (headerIndex) {
-		case 0:
-			return "align left, gapbefore 24";
-		case 1:
-			return "align center";
-		default:
-			return "align right, gapafter 12";
+			case 0:
+				return "align left, gapbefore 24";
+			case 1:
+				return "align center";
+			default:
+				return "align right, gapafter 12";
 		}
 	}
 
@@ -56,7 +53,8 @@ public class HistoryPanel extends JPanel {
 	}
 
 	public void add(String column1, URI link, Icon icon, String column2, String column3) {
-		JComponent c1 = link != null ? new LinkButton(column1, null, icon, link) : new JLabel(column1, icon, SwingConstants.LEFT);
+		JComponent c1 = link != null ? new LinkButton(column1, null, icon, link)
+				: new JLabel(column1, icon, SwingConstants.LEFT);
 		JComponent c2 = new JLabel(column2, SwingConstants.RIGHT);
 		JComponent c3 = new JLabel(column3, SwingConstants.RIGHT);
 

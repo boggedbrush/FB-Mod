@@ -70,7 +70,8 @@ public class Main {
 			}
 
 			if (args.printVersion()) {
-				log.info(String.join(" / ", getApplicationIdentifier(), getJavaRuntimeIdentifier(), getSystemIdentifier()));
+				log.info(String.join(" / ", getApplicationIdentifier(), getJavaRuntimeIdentifier(),
+						getSystemIdentifier()));
 				System.exit(SUCCESS);
 			}
 
@@ -124,13 +125,15 @@ public class Main {
 			// CLI mode => run command-line interface and then exit
 			if (args.runCLI()) {
 				// just import and print license when running with --license option
-				/* if (LICENSE.isFile()) {
-					String psm = args.getLicenseKey();
-					if (psm != null) {
-						configureLicense(psm);
-						System.exit(SUCCESS);
-					}
-				} */
+				/*
+				 * if (LICENSE.isFile()) {
+				 * String psm = args.getLicenseKey();
+				 * if (psm != null) {
+				 * configureLicense(psm);
+				 * System.exit(SUCCESS);
+				 * }
+				 * }
+				 */
 
 				int status = new ArgumentProcessor().run(args);
 				System.exit(status);
@@ -138,7 +141,8 @@ public class Main {
 
 			// just print help page if we can't run any command and also can't start the GUI
 			if (isHeadless()) {
-				log.info(String.format("%s / %s (headless)%n%n%s", getApplicationIdentifier(), getJavaRuntimeIdentifier(), args.usage()));
+				log.info(String.format("%s / %s (headless)%n%n%s", getApplicationIdentifier(),
+						getJavaRuntimeIdentifier(), args.usage()));
 				System.exit(ERROR);
 			}
 
@@ -190,16 +194,18 @@ public class Main {
 		}
 
 		// import license if launched with license file
-		/* if (LICENSE.isFile()) {
-			try {
-				String psm = args.getLicenseKey();
-				if (psm != null) {
-					configureLicense(psm);
-				}
-			} catch (Throwable e) {
-				debug.log(Level.WARNING, e, e::getMessage);
-			}
-		} */
+		/*
+		 * if (LICENSE.isFile()) {
+		 * try {
+		 * String psm = args.getLicenseKey();
+		 * if (psm != null) {
+		 * configureLicense(psm);
+		 * }
+		 * } catch (Throwable e) {
+		 * debug.log(Level.WARNING, e, e::getMessage);
+		 * }
+		 * }
+		 */
 
 		// JavaFX is used for ProgressMonitor and GettingStartedDialog
 		try {
@@ -221,18 +227,70 @@ public class Main {
 		log.info("Startup background tasks done");
 
 		// check for application updates
-	/*	if (!"skip".equals(System.getProperty("application.update"))) {
-			try {
-				checkUpdate();
-			} catch (Throwable e) {
-				debug.log(Level.WARNING, "Failed to check for updates", e);
-			}
-		} */
+		/*
+		 * if (!"skip".equals(System.getProperty("application.update"))) {
+		 * try {
+		 * checkUpdate();
+		 * } catch (Throwable e) {
+		 * debug.log(Level.WARNING, "Failed to check for updates", e);
+		 * }
+		 * }
+		 */
 	}
 
 	private static void startUserInterface(ArgumentBean args) {
-		// use native LaF an all platforms
-		setSystemLookAndFeel();
+		// initialize FlatLaf
+		String theme = Settings.forPackage(Main.class).get("ui.theme", "System");
+		try {
+			if ("Dark".equalsIgnoreCase(theme)) {
+				com.formdev.flatlaf.FlatDarkLaf.setup();
+			} else if ("Light".equalsIgnoreCase(theme)) {
+				com.formdev.flatlaf.FlatLightLaf.setup();
+			} else {
+				// System preference (default)
+				if (com.formdev.flatlaf.util.SystemInfo.isMacOS) {
+					// Auto-detect dark mode using system command since simple API might check older
+					// AWT settings
+					boolean isDark = false;
+					try {
+						// "defaults read -g AppleInterfaceStyle" returns "Dark" (exit code 0) if dark
+						// mode is on
+						Process p = Runtime.getRuntime()
+								.exec(new String[] { "defaults", "read", "-g", "AppleInterfaceStyle" });
+						isDark = (p.waitFor() == 0);
+					} catch (Exception e) {
+						// ignore
+					}
+
+					if (isDark) {
+						log.config("Detected macOS Dark Mode");
+						com.formdev.flatlaf.themes.FlatMacDarkLaf.setup();
+					} else {
+						com.formdev.flatlaf.themes.FlatMacLightLaf.setup();
+					}
+
+					if (com.formdev.flatlaf.util.SystemInfo.isMacFullWindowContentSupported) {
+						// enables transparent title bar
+						// System.setProperty("apple.awt.application.appearance",
+						// isDark ? "NSAppearanceNameDarkAqua" : "system");
+					}
+				} else {
+					com.formdev.flatlaf.FlatLaf.setup(new com.formdev.flatlaf.themes.FlatMacLightLaf());
+				}
+
+				// Check user preference overrides
+				if ("Dark".equalsIgnoreCase(theme)) {
+					com.formdev.flatlaf.FlatDarkLaf.setup();
+				} else if ("Light".equalsIgnoreCase(theme)) {
+					com.formdev.flatlaf.FlatLightLaf.setup();
+				}
+
+				log.info("Using FlatLaf: " + javax.swing.UIManager.getLookAndFeel().getName());
+			}
+		} catch (Exception e) {
+			log.log(Level.WARNING, "Failed to initialize FlatLaf", e);
+			setSystemLookAndFeel();
+		}
 
 		// start standard frame or single panel frame
 		PanelBuilder[] panels = args.getPanelBuilders();
@@ -295,48 +353,59 @@ public class Main {
 	/**
 	 * Show update notifications if updates are available
 	 */
-/*	private static void checkUpdate() throws Exception {
-		Cache cache = Cache.getCache(getApplicationName(), CacheType.Persistent);
-		Document dom = cache.xml(getApplicationProperty("update.url"), URL::new).expire(Cache.ONE_WEEK).retry(0).get();
-
-		// flush to disk
-		cache.flush();
-
-		// parse update xml
-		Map<String, String> update = streamElements(dom.getFirstChild()).collect(toMap(n -> n.getNodeName(), n -> n.getTextContent().trim()));
-
-		// check if update is required
-		int latestRev = Integer.parseInt(update.get("revision"));
-		int currentRev = getApplicationRevisionNumber();
-
-		if (latestRev > currentRev && currentRev > 0) {
-			SwingUtilities.invokeLater(() -> {
-				JDialog dialog = new JDialog(JFrame.getFrames()[0], update.get("title"), ModalityType.APPLICATION_MODAL);
-				JPanel pane = new JPanel(new MigLayout("fill, nogrid, insets dialog"));
-				dialog.setContentPane(pane);
-
-				pane.add(new JLabel(ResourceManager.getIcon("window.icon.medium")), "aligny top");
-				pane.add(new JLabel(update.get("message")), "aligny top, gap 10, wrap paragraph:push");
-
-				pane.add(newButton("Download", ResourceManager.getIcon("dialog.continue"), evt -> {
-					openURI(update.get("download"));
-					dialog.setVisible(false);
-				}), "tag ok");
-
-				pane.add(newButton("Details", ResourceManager.getIcon("action.report"), evt -> {
-					openURI(update.get("discussion"));
-				}), "tag help2");
-
-				pane.add(newButton("Ignore", ResourceManager.getIcon("dialog.cancel"), evt -> {
-					dialog.setVisible(false);
-				}), "tag cancel");
-
-				dialog.pack();
-				dialog.setLocation(getOffsetLocation(dialog.getOwner()));
-				dialog.setVisible(true);
-			});
-		}
-	} */
+	/*
+	 * private static void checkUpdate() throws Exception {
+	 * Cache cache = Cache.getCache(getApplicationName(), CacheType.Persistent);
+	 * Document dom = cache.xml(getApplicationProperty("update.url"),
+	 * URL::new).expire(Cache.ONE_WEEK).retry(0).get();
+	 * 
+	 * // flush to disk
+	 * cache.flush();
+	 * 
+	 * // parse update xml
+	 * Map<String, String> update =
+	 * streamElements(dom.getFirstChild()).collect(toMap(n -> n.getNodeName(), n ->
+	 * n.getTextContent().trim()));
+	 * 
+	 * // check if update is required
+	 * int latestRev = Integer.parseInt(update.get("revision"));
+	 * int currentRev = getApplicationRevisionNumber();
+	 * 
+	 * if (latestRev > currentRev && currentRev > 0) {
+	 * SwingUtilities.invokeLater(() -> {
+	 * JDialog dialog = new JDialog(JFrame.getFrames()[0], update.get("title"),
+	 * ModalityType.APPLICATION_MODAL);
+	 * JPanel pane = new JPanel(new MigLayout("fill, nogrid, insets dialog"));
+	 * dialog.setContentPane(pane);
+	 * 
+	 * pane.add(new JLabel(ResourceManager.getIcon("window.icon.medium")),
+	 * "aligny top");
+	 * pane.add(new JLabel(update.get("message")),
+	 * "aligny top, gap 10, wrap paragraph:push");
+	 * 
+	 * pane.add(newButton("Download", ResourceManager.getIcon("dialog.continue"),
+	 * evt -> {
+	 * openURI(update.get("download"));
+	 * dialog.setVisible(false);
+	 * }), "tag ok");
+	 * 
+	 * pane.add(newButton("Details", ResourceManager.getIcon("action.report"), evt
+	 * -> {
+	 * openURI(update.get("discussion"));
+	 * }), "tag help2");
+	 * 
+	 * pane.add(newButton("Ignore", ResourceManager.getIcon("dialog.cancel"), evt ->
+	 * {
+	 * dialog.setVisible(false);
+	 * }), "tag cancel");
+	 * 
+	 * dialog.pack();
+	 * dialog.setLocation(getOffsetLocation(dialog.getOwner()));
+	 * dialog.setVisible(true);
+	 * });
+	 * }
+	 * }
+	 */
 
 	/**
 	 * Show Getting Started to new users
@@ -373,10 +442,13 @@ public class Main {
 	}
 
 	/**
-	 * Initialize default SecurityManager and grant all permissions via security policy. Initialization is required in order to run {@link ExpressionFormat} in a secure sandbox.
+	 * Initialize default SecurityManager and grant all permissions via security
+	 * policy. Initialization is required in order to run {@link ExpressionFormat}
+	 * in a secure sandbox.
 	 */
 	private static void initializeSecurityManager() {
-		// java.lang.SecurityManager is deprecated for removal and emits unavoidable runtime warnings on modern JDKs
+		// java.lang.SecurityManager is deprecated for removal and emits unavoidable
+		// runtime warnings on modern JDKs
 		if (Runtime.version().feature() >= 17) {
 			debug.fine("Skipping legacy security manager initialization on Java " + Runtime.version().feature());
 			return;
@@ -406,7 +478,8 @@ public class Main {
 			System.setSecurityManager(new SecurityManager());
 		} catch (Throwable e) {
 			// security manager was probably set via system property
-			debug.log(Level.WARNING, "Security manager unavailable; expression sandbox will run without legacy security manager", e);
+			debug.log(Level.WARNING,
+					"Security manager unavailable; expression sandbox will run without legacy security manager", e);
 		}
 	}
 
@@ -460,7 +533,8 @@ public class Main {
 
 			// log errors to file
 			try {
-				Handler errorLogHandler = createSimpleFileHandler(ApplicationFolder.AppData.resolve("error.log"), Level.WARNING);
+				Handler errorLogHandler = createSimpleFileHandler(ApplicationFolder.AppData.resolve("error.log"),
+						Level.WARNING);
 				log.addHandler(errorLogHandler);
 				debug.addHandler(errorLogHandler);
 			} catch (Exception e) {

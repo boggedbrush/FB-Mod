@@ -25,3 +25,13 @@ profile.properties
 # local tooling artifacts
 artifacts/logs/
 cache/javafx-sdk-*/
+
+# IDEs
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Python
+__pycache__/

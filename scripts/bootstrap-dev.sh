@@ -236,6 +236,32 @@ run_ant() {
   "$ANT_CMD" "$target" 2>&1 | tee "$logfile"
 }
 
+configure_ant_args_for_xz() {
+  local xz_jar="$ROOT_DIR/lib/ivy/jar/xz.jar"
+
+  if [[ ! -f "$xz_jar" ]]; then
+    return
+  fi
+
+  local ant_args="${ANT_ARGS:-}"
+  if [[ "$ant_args" != *"$xz_jar"* ]]; then
+    ant_args="-lib $xz_jar${ant_args:+ $ant_args}"
+  fi
+
+  export ANT_ARGS="$ant_args"
+  echo "Configured ANT_ARGS for current shell."
+
+  if [[ -n "${GITHUB_ENV:-}" ]]; then
+    local delimiter="__ANT_ARGS_EOF__"
+    {
+      printf 'ANT_ARGS<<%s\n' "$delimiter"
+      printf '%s\n' "$ant_args"
+      printf '%s\n' "$delimiter"
+    } >> "$GITHUB_ENV"
+    echo "Configured ANT_ARGS for subsequent workflow steps."
+  fi
+}
+
 require_cmd curl
 require_cmd tar
 require_cmd unzip
@@ -293,6 +319,7 @@ if [[ "$CHECK_ONLY" == "1" ]]; then
 fi
 
 run_ant resolve
+configure_ant_args_for_xz
 run_ant jar
 
 echo "Build logs written to: $LOG_DIR"

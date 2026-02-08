@@ -4,10 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DIST_LIB_DIR="$ROOT_DIR/dist/lib"
 
-if [[ ! -d "$DIST_LIB_DIR" ]]; then
-  echo "Missing dist/lib. Build first (./scripts/bootstrap-dev.sh --install)." >&2
-  exit 1
-fi
+/usr/bin/env bash "$ROOT_DIR/scripts/rebuild-if-needed.sh"
 
 resolve_java() {
   local candidate

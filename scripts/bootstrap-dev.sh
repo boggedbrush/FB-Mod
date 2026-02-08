@@ -133,17 +133,76 @@ setup_ant() {
   ANT_CMD="$ant_home/bin/ant"
 }
 
-setup_ivy() {
-  if command -v ivy >/dev/null 2>&1; then
+normalize_path() {
+  local raw_path="$1"
+  if [[ "$raw_path" =~ ^([A-Za-z]):[\\/](.*)$ ]]; then
+    local drive="${BASH_REMATCH[1],,}"
+    local rest="${BASH_REMATCH[2]//\\//}"
+    printf '/%s/%s\n' "$drive" "$rest"
     return
   fi
 
-  local ant_home
-  ant_home="$(cd "$(dirname "$ANT_CMD")/.." && pwd)"
-  local home_dir="${HOME:-}"
-  if [[ -z "$home_dir" ]]; then
-    home_dir="$("$JAVA_BIN" -XshowSettings:properties -version 2>&1 | awk -F'= ' '/^[[:space:]]*user\.home = / {print $2; exit}')"
+  printf '%s\n' "$raw_path"
+}
+
+resolve_ant_home() {
+  local ant_home_env="${ANT_HOME:-}"
+  local diagnostics_home
+  if [[ -n "$ant_home_env" ]]; then
+    ant_home_env="$(normalize_path "$ant_home_env")"
   fi
+  if [[ -n "$ant_home_env" ]] && [[ -d "${ant_home_env}/lib" ]]; then
+    printf '%s\n' "$ant_home_env"
+    return
+  fi
+
+  diagnostics_home="$("$ANT_CMD" -diagnostics 2>/dev/null | awk -F': ' '/^ant.home:/ {print $2; exit}' | tr -d '\r')"
+  if [[ -n "$diagnostics_home" ]]; then
+    diagnostics_home="$(normalize_path "$diagnostics_home")"
+  fi
+  if [[ -n "$diagnostics_home" ]] && [[ -d "$diagnostics_home/lib" ]]; then
+    printf '%s\n' "$diagnostics_home"
+    return
+  fi
+
+  cd "$(dirname "$ANT_CMD")/.." && pwd
+}
+
+resolve_user_home() {
+  local diagnostics_user_home
+  local java_user_home
+  local home_env="${HOME:-}"
+
+  diagnostics_user_home="$("$ANT_CMD" -diagnostics 2>/dev/null | awk -F': ' '/^user.home:/ {print $2; exit}' | tr -d '\r')"
+  if [[ -n "$diagnostics_user_home" ]]; then
+    diagnostics_user_home="$(normalize_path "$diagnostics_user_home")"
+  fi
+  if [[ -n "$diagnostics_user_home" ]]; then
+    printf '%s\n' "$diagnostics_user_home"
+    return
+  fi
+
+  java_user_home="$("$JAVA_BIN" -XshowSettings:properties -version 2>&1 | awk -F'= ' '/^[[:space:]]*user\.home = / {print $2; exit}')"
+  if [[ -n "$java_user_home" ]]; then
+    java_user_home="$(normalize_path "$java_user_home")"
+  fi
+  if [[ -n "$java_user_home" ]]; then
+    printf '%s\n' "$java_user_home"
+    return
+  fi
+
+  if [[ -n "$home_env" ]]; then
+    home_env="$(normalize_path "$home_env")"
+    printf '%s\n' "$home_env"
+    return
+  fi
+}
+
+setup_ivy() {
+  local ant_home
+  ant_home="$(resolve_ant_home)"
+  local home_dir
+  home_dir="$(resolve_user_home)"
   if [[ -z "$home_dir" ]]; then
     echo "Unable to determine user home for Ivy installation." >&2
     exit 1

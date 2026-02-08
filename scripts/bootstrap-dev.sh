@@ -140,8 +140,17 @@ setup_ivy() {
 
   local ant_home
   ant_home="$(cd "$(dirname "$ANT_CMD")/.." && pwd)"
+  local home_dir="${HOME:-}"
+  if [[ -z "$home_dir" ]]; then
+    home_dir="$("$JAVA_BIN" -XshowSettings:properties -version 2>&1 | awk -F'= ' '/^[[:space:]]*user\.home = / {print $2; exit}')"
+  fi
+  if [[ -z "$home_dir" ]]; then
+    echo "Unable to determine user home for Ivy installation." >&2
+    exit 1
+  fi
+  local user_ivy="$home_dir/.ant/lib/ivy.jar"
 
-  if [[ -f "$ant_home/lib/ivy.jar" ]]; then
+  if [[ -f "$ant_home/lib/ivy.jar" || -f "$user_ivy" ]]; then
     return
   fi
 
@@ -151,8 +160,14 @@ setup_ivy() {
   fi
 
   local ivy_url="https://repo1.maven.org/maven2/org/apache/ivy/ivy/$IVY_VERSION/ivy-$IVY_VERSION.jar"
+  local ivy_target="$ant_home/lib/ivy.jar"
+  if [[ ! -w "$ant_home/lib" ]]; then
+    ivy_target="$user_ivy"
+    mkdir -p "$(dirname "$ivy_target")"
+  fi
+
   echo "Downloading Ivy $IVY_VERSION"
-  curl -fsSL "$ivy_url" -o "$ant_home/lib/ivy.jar"
+  curl -fsSL "$ivy_url" -o "$ivy_target"
 }
 
 run_ant() {

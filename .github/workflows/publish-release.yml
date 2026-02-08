@@ -1,0 +1,141 @@
+name: Publish Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      title:
+        description: Release title (defaults to auto-generated tag)
+        required: false
+        default: ''
+        type: string
+      draft:
+        description: Create as draft release
+        required: true
+        default: false
+        type: boolean
+      prerelease:
+        description: Mark as pre-release
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-release
+  cancel-in-progress: false
+
+jobs:
+  prepare-tag:
+    name: Determine Next Tag
+    runs-on: ubuntu-22.04
+    outputs:
+      next_tag: ${{ steps.next-tag.outputs.value }}
+      release_name: ${{ steps.release-name.outputs.value }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch tags
+        run: git fetch --force --tags
+
+      - name: Compute next semantic tag
+        id: next-tag
+        shell: bash
+        run: |
+          latest_tag="$(
+            git tag --list \
+              | grep -E '^(v)?[0-9]+\.[0-9]+\.[0-9]+$' \
+              | awk '{ normalized=$0; sub(/^v/, "", normalized); print normalized " " $0 }' \
+              | sort -k1,1V \
+              | tail -n 1 \
+              | awk '{ print $2 }'
+          )"
+
+          if [[ -z "$latest_tag" ]]; then
+            next_tag="v0.0.1"
+          elif [[ "$latest_tag" =~ ^(v)?([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            prefix="${BASH_REMATCH[1]}"
+            major="${BASH_REMATCH[2]}"
+            minor="${BASH_REMATCH[3]}"
+            patch="${BASH_REMATCH[4]}"
+            next_tag="${prefix}${major}.${minor}.$((patch + 1))"
+          else
+            echo "Latest matching tag is not valid semver: $latest_tag" >&2
+            exit 1
+          fi
+
+          echo "value=$next_tag" >> "$GITHUB_OUTPUT"
+          echo "Computed next tag: $next_tag"
+
+      - name: Resolve release title
+        id: release-name
+        env:
+          INPUT_TITLE: ${{ inputs.title }}
+          NEXT_TAG: ${{ steps.next-tag.outputs.value }}
+        run: |
+          if [[ -n "$INPUT_TITLE" ]]; then
+            name="$INPUT_TITLE"
+          else
+            name="$NEXT_TAG"
+          fi
+
+          echo "value=$name" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: prepare-tag
+    uses: ./.github/workflows/build-executables.yml
+    with:
+      artifact_prefix: release-${{ needs.prepare-tag.outputs.next_tag }}
+
+  publish:
+    name: Create GitHub Release
+    runs-on: ubuntu-22.04
+    needs: [prepare-tag, build]
+
+    steps:
+      - name: Download Linux artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-${{ needs.prepare-tag.outputs.next_tag }}-linux
+          path: release-assets
+
+      - name: Download macOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-${{ needs.prepare-tag.outputs.next_tag }}-macos
+          path: release-assets
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-${{ needs.prepare-tag.outputs.next_tag }}-windows
+          path: release-assets
+
+      - name: List release assets
+        run: |
+          echo "Tag: ${{ needs.prepare-tag.outputs.next_tag }}"
+          echo "Assets to upload:"
+          ls -al release-assets
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare-tag.outputs.next_tag }}
+          target_commitish: ${{ github.sha }}
+          name: ${{ needs.prepare-tag.outputs.release_name }}
+          generate_release_notes: true
+          draft: ${{ inputs.draft }}
+          prerelease: ${{ inputs.prerelease }}
+          files: |
+            release-assets/*.msi
+            release-assets/*portable.zip
+            release-assets/*portable.tar.xz
+            release-assets/*.app.tar.xz
+            release-assets/*.dmg
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

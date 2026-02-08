@@ -1,0 +1,116 @@
+name: Build Windows
+
+on:
+  workflow_dispatch:
+    inputs:
+      artifact_prefix:
+        description: Prefix for uploaded artifact names
+        required: false
+        default: build
+        type: string
+  workflow_call:
+    inputs:
+      artifact_prefix:
+        required: false
+        default: build
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows:
+    name: Build (windows)
+    runs-on: windows-2022
+
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Restore build caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            .tools
+            cache/openjdk-*.tar.gz
+            cache/openjdk-*.zip
+            cache/openjfx-*_bin-sdk.zip
+            cache/javafx-sdk-*
+            ~/.ivy2/cache
+          key: ${{ runner.os }}-build-cache-${{ hashFiles('build.xml', 'app.properties', 'scripts/bootstrap-dev.sh', 'cache/get-java.sh', 'cache/get-java.ps1', 'cache/get-jfx.sh', 'cache/get-jfx.ps1') }}
+          restore-keys: |
+            ${{ runner.os }}-build-cache-
+
+      - name: Restore Chocolatey package cache
+        uses: actions/cache@v4
+        with:
+          path: .choco-cache
+          key: ${{ runner.os }}-choco-cache-${{ hashFiles('.github/workflows/build-windows.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-choco-cache-
+
+      - name: Install WiX Toolset
+        shell: pwsh
+        run: |
+          New-Item -Path .choco-cache -ItemType Directory -Force | Out-Null
+          $candle = Get-Command candle -ErrorAction SilentlyContinue
+          if (-not $candle) {
+            choco install wixtoolset -y --no-progress --cache-location "$pwd\\.choco-cache"
+          } else {
+            Write-Host "WiX is already available on PATH."
+          }
+
+          $candle = Get-Command candle -ErrorAction SilentlyContinue
+          if (-not $candle) {
+            throw 'WiX tool candle.exe was not found after installation.'
+          }
+
+          $wixBin = Split-Path -Parent $candle.Source
+          $wixBin | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Bootstrap build (Ant/Ivy)
+        run: ./scripts/bootstrap-dev.sh --install
+
+      - name: Smoke CLI
+        run: ./scripts/smoke.sh
+
+      - name: Build Windows packages
+        run: |
+          ANT_BIN="$(command -v ant || true)"
+          if [[ -z "$ANT_BIN" ]]; then
+            ANT_BIN="$(find .tools -maxdepth 4 -type f -path '*/bin/ant' | head -n 1)"
+          fi
+          if [[ -z "$ANT_BIN" ]]; then
+            echo "Unable to find Ant binary on PATH or in .tools" >&2
+            exit 1
+          fi
+
+          echo "Using Ant at: $ANT_BIN"
+          "$ANT_BIN" msi zip
+
+      - name: Upload package artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact_prefix }}-windows
+          path: |
+            dist/*.msi
+            dist/*portable.zip
+          if-no-files-found: error
+
+      - name: Upload logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: logs-${{ inputs.artifact_prefix }}-windows
+          path: artifacts/logs
+          if-no-files-found: ignore

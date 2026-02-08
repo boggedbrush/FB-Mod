@@ -24,6 +24,10 @@ case "$JDK_ARCH" in
 		JDK_URL="https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_linux-x64_bin.tar.gz"
 		JDK_SHA256="99be79935354f5c0df1ad293620ea36d13f48ec3ea870c838f20c504c9668b57"
 	;;
+	"MINGW64_NT-"*' x86_64' | "MSYS_NT-"*' x86_64' | "CYGWIN_NT-"*' x86_64')
+		JDK_URL="https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_windows-x64_bin.zip"
+		JDK_SHA256="cf39490fe042dba1b61d6e9a395095279a69e70086c8c8d5466d9926d80976d8"
+	;;
 	"Darwin x86_64" | "Darwin arm64")
 		JDK_URL="https://download.java.net/java/GA/jdk11/9/GPL/openjdk-11.0.2_osx-x64_bin.tar.gz"
 		JDK_SHA256="f365750d4be6111be8a62feda24e265d97536712bc51783162982b8ad96a70ee"

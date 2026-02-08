@@ -24,6 +24,10 @@ case "$JDK_ARCH" in
 		JDK_URL="https://download2.gluonhq.com/openjfx/11.0.2/openjfx-11.0.2_linux-x64_bin-sdk.zip"
 		JDK_SHA256="40ef06cd50ea535d45403d9c44e9cb405b631c547734b5b50a6cb7b222293f97"
 	;;
+	"MINGW64_NT-"*' x86_64' | "MSYS_NT-"*' x86_64' | "CYGWIN_NT-"*' x86_64')
+		JDK_URL="https://download2.gluonhq.com/openjfx/11.0.2/openjfx-11.0.2_windows-x64_bin-sdk.zip"
+		JDK_SHA256="2dd008e0c865f9bc02abd4aaf11ceeb15ca5bfe8c434e613501feda60528ce61"
+	;;
 	"Darwin x86_64" | "Darwin arm64")
 		JDK_URL="https://download2.gluonhq.com/openjfx/11.0.2/openjfx-11.0.2_osx-x64_bin-sdk.zip"
 		JDK_SHA256="e98158812db1a0037cdaf85824adff384e41e3edf046fda145479ce6057cb514"

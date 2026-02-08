@@ -4,7 +4,8 @@
 
 
 # JDK version identifiers
-JDK_ARCH=`uname -sm`
+# Keep downloads aligned with packaging inputs (osx-x64) even on Apple Silicon hosts.
+JDK_ARCH="${FILEBOT_ARCH_OVERRIDE:-`uname -sm`}"
 
 case "$JDK_ARCH" in
 	"Linux armv7l")
@@ -23,7 +24,7 @@ case "$JDK_ARCH" in
 		JDK_URL="https://download2.gluonhq.com/openjfx/11.0.2/openjfx-11.0.2_linux-x64_bin-sdk.zip"
 		JDK_SHA256="40ef06cd50ea535d45403d9c44e9cb405b631c547734b5b50a6cb7b222293f97"
 	;;
-	"Darwin x86_64")
+	"Darwin x86_64" | "Darwin arm64")
 		JDK_URL="https://download2.gluonhq.com/openjfx/11.0.2/openjfx-11.0.2_osx-x64_bin-sdk.zip"
 		JDK_SHA256="e98158812db1a0037cdaf85824adff384e41e3edf046fda145479ce6057cb514"
 	;;

@@ -21,7 +21,7 @@ permissions:
 jobs:
   build-macos:
     name: Build (macos)
-    runs-on: macos-13
+    runs-on: macos-latest
 
     defaults:
       run:

@@ -29,6 +29,11 @@ if [[ -n "$JAVA_CMD" && -x "$JAVA_CMD" ]]; then
   fi
 fi
 if [[ -z "$JAVA_CMD" || ! -x "$JAVA_CMD" ]]; then
+  if [[ -x "$ROOT_DIR/.tools/jdk-17/bin/java" ]]; then
+    JAVA_CMD="$ROOT_DIR/.tools/jdk-17/bin/java"
+  fi
+fi
+if [[ -z "$JAVA_CMD" || ! -x "$JAVA_CMD" ]]; then
   if [[ -x "/opt/homebrew/opt/openjdk@17/bin/java" ]]; then
     JAVA_CMD="/opt/homebrew/opt/openjdk@17/bin/java"
   fi

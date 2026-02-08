@@ -15,6 +15,7 @@ resolve_java() {
     "${JAVA_CMD:-}"
     "${JAVA_HOME:-}/bin/java"
     "$(command -v java || true)"
+    "$ROOT_DIR/.tools/jdk-17/bin/java"
     "/opt/homebrew/opt/openjdk@17/bin/java"
     "/usr/local/opt/openjdk@17/bin/java"
   )
@@ -41,7 +42,7 @@ resolve_javafx_lib() {
   )
 
   for candidate in "${candidates[@]}"; do
-    if [[ -n "$candidate" && -f "$candidate/javafx-base.jar" ]]; then
+    if [[ -n "$candidate" ]] && [[ -f "$candidate/javafx-base.jar" || -f "$candidate/javafx.base.jar" ]]; then
       printf '%s\n' "$candidate"
       return 0
     fi

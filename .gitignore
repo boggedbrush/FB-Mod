@@ -1,34 +1,31 @@
-bin
-build
+# Build outputs
+/bin/
+/build/
+/dist/
+/release/
+/lib/ivy/
 
-dist
-release
+# Local build config overrides
+/profile.properties
 
-ivy
-
-QuickLook
-
-*.txt
-*.psm
-
-makefile
-makefile.variables
-profile.properties
-
-.project
-.classpath
-.settings
-.externalToolBuilders
-
-.DS_Store
-
-# local tooling artifacts
-artifacts/logs/
-cache/javafx-sdk-*/
+# Local tooling artifacts
+/.tools/
+/artifacts/
+/cache/javafx-sdk-*/
+/cache/openjfx-*_bin-sdk.zip
+/cache/openjdk-*_bin.tar.gz
+/cache/openjdk-*_bin.zip
 
 # IDEs
-.vscode/
-.idea/
+/.project
+/.classpath
+/.settings/
+/.externalToolBuilders/
+/.vscode/
+/.idea/
+
+# OS
+.DS_Store
 
 # Logs
 *.log

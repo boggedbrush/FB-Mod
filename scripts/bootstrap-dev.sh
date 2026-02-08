@@ -4,9 +4,11 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 TOOLS_DIR="$ROOT_DIR/.tools"
 LOG_DIR="$ROOT_DIR/artifacts/logs"
+APP_PROPERTIES="$ROOT_DIR/app.properties"
 
 ANT_VERSION="1.10.15"
 IVY_VERSION="2.5.2"
+JFX_VERSION="$(awk -F': *' '/^jfx.version:/ {print $2; exit}' "$APP_PROPERTIES")"
 
 INSTALL_TOOLS=0
 CHECK_ONLY=0
@@ -35,6 +37,72 @@ require_cmd() {
     echo "Missing required command: $cmd" >&2
     exit 1
   fi
+}
+
+resolve_javafx_lib() {
+  local candidate
+  local -a candidates=(
+    "${JAVAFX_LIB:-}"
+    "$ROOT_DIR/cache/javafx-sdk-$JFX_VERSION/lib"
+    "/usr/share/openjfx/lib"
+    "/usr/lib/jvm/javafx-sdk/lib"
+    "/usr/lib/openjfx/lib"
+    "/usr/lib64/openjfx/lib"
+  )
+
+  for candidate in "${candidates[@]}"; do
+    if [[ -n "$candidate" ]] && [[ -f "$candidate/javafx-base.jar" || -f "$candidate/javafx.base.jar" ]]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+setup_javafx() {
+  local javafx_lib
+  javafx_lib="$(resolve_javafx_lib || true)"
+  if [[ -n "$javafx_lib" ]]; then
+    JAVAFX_LIB="$javafx_lib"
+    export JAVAFX_LIB
+    return
+  fi
+
+  if [[ "$INSTALL_TOOLS" != "1" ]]; then
+    echo "JavaFX not found. Re-run with --install or set JAVAFX_LIB to a directory containing javafx-*.jar." >&2
+    exit 1
+  fi
+
+  local fetch_script="$ROOT_DIR/cache/get-jfx.sh"
+  if [[ ! -f "$fetch_script" ]]; then
+    echo "JavaFX fetch script is missing: $fetch_script" >&2
+    exit 1
+  fi
+
+  echo "Downloading JavaFX runtime"
+  (
+    cd "$ROOT_DIR/cache"
+    /bin/sh ./get-jfx.sh
+  )
+
+  local archive
+  archive="$(find "$ROOT_DIR/cache" -maxdepth 1 -type f -name "openjfx-$JFX_VERSION*_bin-sdk.zip" | head -n 1)"
+  if [[ -z "$archive" ]]; then
+    echo "JavaFX archive not found after download (expected openjfx-$JFX_VERSION*_bin-sdk.zip)." >&2
+    exit 1
+  fi
+
+  unzip -q -o "$archive" -d "$ROOT_DIR/cache"
+
+  javafx_lib="$(resolve_javafx_lib || true)"
+  if [[ -z "$javafx_lib" ]]; then
+    echo "JavaFX download did not produce a usable lib directory. Set JAVAFX_LIB manually." >&2
+    exit 1
+  fi
+
+  JAVAFX_LIB="$javafx_lib"
+  export JAVAFX_LIB
 }
 
 parse_java_major() {
@@ -96,8 +164,15 @@ run_ant() {
 
 require_cmd curl
 require_cmd tar
+require_cmd unzip
 
 JAVA_BIN="${JAVA_BIN:-$(command -v java || true)}"
+if [[ -z "$JAVA_BIN" || ! -x "$JAVA_BIN" ]]; then
+  if [[ -x "$ROOT_DIR/.tools/jdk-17/bin/java" ]]; then
+    JAVA_BIN="$ROOT_DIR/.tools/jdk-17/bin/java"
+  fi
+fi
+
 if [[ -z "$JAVA_BIN" || ! -x "$JAVA_BIN" ]]; then
   if [[ -x "/opt/homebrew/opt/openjdk@17/bin/java" ]]; then
     JAVA_BIN="/opt/homebrew/opt/openjdk@17/bin/java"
@@ -128,12 +203,16 @@ export PATH="$JAVA_HOME/bin:$PATH"
 
 setup_ant
 setup_ivy
+setup_javafx
 
 echo "Java version:"
 "$JAVA_BIN" -version
 
 echo "Ant version:"
 "$ANT_CMD" -version
+
+echo "JavaFX lib:"
+echo "$JAVAFX_LIB"
 
 if [[ "$CHECK_ONLY" == "1" ]]; then
   exit 0

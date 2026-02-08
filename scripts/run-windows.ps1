@@ -17,6 +17,7 @@ function Resolve-Java {
     $env:JAVA_CMD
     $(if ($env:JAVA_HOME) { Join-Path $env:JAVA_HOME "bin\\java.exe" })
     $(try { (Get-Command java -ErrorAction Stop).Source } catch { $null })
+    (Join-Path $RootDir ".tools\\jdk-17\\bin\\java.exe")
     (Join-Path $env:ProgramFiles "Eclipse Adoptium\\jdk-17*\\bin\\java.exe")
     (Join-Path $env:ProgramFiles "Java\\jdk-17*\\bin\\java.exe")
     (Join-Path $env:ProgramFiles "Microsoft\\jdk-17*\\bin\\java.exe")
@@ -57,7 +58,7 @@ function Resolve-JavaFxLib {
       }
     }
 
-    if (Test-Path (Join-Path $resolved.FullName "javafx-base.jar")) {
+    if ((Test-Path (Join-Path $resolved.FullName "javafx-base.jar")) -or (Test-Path (Join-Path $resolved.FullName "javafx.base.jar"))) {
       return $resolved.FullName
     }
   }

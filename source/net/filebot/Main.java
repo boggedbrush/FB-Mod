@@ -14,8 +14,10 @@ import static net.filebot.util.XPathUtilities.*;
 import static net.filebot.util.ui.SwingUI.*;
 
 import java.awt.Dialog.ModalityType;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URL;
 import java.security.CodeSource;
 import java.security.Permission;
@@ -25,9 +27,13 @@ import java.security.Policy;
 import java.security.ProtectionDomain;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.prefs.Preferences;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -60,17 +66,8 @@ public class Main {
 		try {
 			// Set macOS appearance BEFORE any AWT/Swing initialization
 			// This must happen before any AWT classes are loaded
-			if (System.getProperty("os.name", "").toLowerCase().contains("mac")) {
-				try {
-					// Check if dark mode is enabled
-					Process p = Runtime.getRuntime()
-							.exec(new String[] { "defaults", "read", "-g", "AppleInterfaceStyle" });
-					boolean isDark = (p.waitFor() == 0);
-					System.setProperty("apple.awt.application.appearance",
-							isDark ? "NSAppearanceNameDarkAqua" : "NSAppearanceNameAqua");
-				} catch (Exception e) {
-					// Ignore - will use default appearance
-				}
+			if (com.formdev.flatlaf.util.SystemInfo.isMacOS) {
+				applyMacWindowAppearance(isMacDarkThemeEnabled());
 			}
 
 			// parse arguments
@@ -259,75 +256,44 @@ public class Main {
 		try {
 			if ("Dark".equalsIgnoreCase(theme)) {
 				com.formdev.flatlaf.FlatDarkLaf.setup();
-				// Make dark mode background darker
-				java.awt.Color darkerBg = new java.awt.Color(0x1E1E1E);
-				java.awt.Color darkerBg2 = new java.awt.Color(0x252525);
-				javax.swing.UIManager.put("Panel.background", darkerBg);
-				javax.swing.UIManager.put("List.background", darkerBg2);
-				javax.swing.UIManager.put("Tree.background", darkerBg2);
-				javax.swing.UIManager.put("Table.background", darkerBg2);
-				javax.swing.UIManager.put("TextArea.background", darkerBg2);
-				javax.swing.UIManager.put("TextField.background", darkerBg2);
-				javax.swing.UIManager.put("ScrollPane.background", darkerBg);
+				applyDarkBackgroundPalette();
 				// Enable dark title bar on macOS
 				if (com.formdev.flatlaf.util.SystemInfo.isMacOS) {
-					System.setProperty("apple.awt.application.appearance", "NSAppearanceNameDarkAqua");
+					applyMacWindowAppearance(true);
 				}
 			} else if ("Light".equalsIgnoreCase(theme)) {
 				com.formdev.flatlaf.FlatLightLaf.setup();
 				// Ensure light title bar on macOS
 				if (com.formdev.flatlaf.util.SystemInfo.isMacOS) {
-					System.setProperty("apple.awt.application.appearance", "NSAppearanceNameAqua");
+					applyMacWindowAppearance(false);
 				}
 			} else {
 				// System preference (default)
-				if (com.formdev.flatlaf.util.SystemInfo.isMacOS) {
-					// Auto-detect dark mode using system command since simple API might check older
-					// AWT settings
-					boolean isDark = false;
-					try {
-						// "defaults read -g AppleInterfaceStyle" returns "Dark" (exit code 0) if dark
-						// mode is on
-						Process p = Runtime.getRuntime()
-								.exec(new String[] { "defaults", "read", "-g", "AppleInterfaceStyle" });
-						isDark = (p.waitFor() == 0);
-					} catch (Exception e) {
-						// ignore
-					}
+				boolean isDark = isSystemDarkThemeEnabled();
 
+				if (com.formdev.flatlaf.util.SystemInfo.isMacOS) {
 					if (isDark) {
 						log.config("Detected macOS Dark Mode");
 						com.formdev.flatlaf.themes.FlatMacDarkLaf.setup();
-						// Make dark mode background darker
-						java.awt.Color darkerBg = new java.awt.Color(0x1E1E1E);
-						java.awt.Color darkerBg2 = new java.awt.Color(0x252525);
-						javax.swing.UIManager.put("Panel.background", darkerBg);
-						javax.swing.UIManager.put("List.background", darkerBg2);
-						javax.swing.UIManager.put("Tree.background", darkerBg2);
-						javax.swing.UIManager.put("Table.background", darkerBg2);
-						javax.swing.UIManager.put("TextArea.background", darkerBg2);
-						javax.swing.UIManager.put("TextField.background", darkerBg2);
-						javax.swing.UIManager.put("ScrollPane.background", darkerBg);
+						applyDarkBackgroundPalette();
 					} else {
 						com.formdev.flatlaf.themes.FlatMacLightLaf.setup();
 					}
 
 					if (com.formdev.flatlaf.util.SystemInfo.isMacFullWindowContentSupported) {
 						// enables dark title bar for all windows
-						System.setProperty("apple.awt.application.appearance",
-								isDark ? "NSAppearanceNameDarkAqua" : "NSAppearanceNameAqua");
+						applyMacWindowAppearance(isDark);
 					}
 				} else {
-					com.formdev.flatlaf.FlatLaf.setup(new com.formdev.flatlaf.themes.FlatMacLightLaf());
+					if (isDark) {
+						com.formdev.flatlaf.FlatDarkLaf.setup();
+						applyDarkBackgroundPalette();
+					} else {
+						com.formdev.flatlaf.FlatLightLaf.setup();
+					}
 				}
 
-				// Check user preference overrides
-				if ("Dark".equalsIgnoreCase(theme)) {
-					com.formdev.flatlaf.FlatDarkLaf.setup();
-				} else if ("Light".equalsIgnoreCase(theme)) {
-					com.formdev.flatlaf.FlatLightLaf.setup();
-				}
-
+				log.info("Detected system theme: " + (isDark ? "Dark" : "Light"));
 				log.info("Using FlatLaf: " + javax.swing.UIManager.getLookAndFeel().getName());
 			}
 		} catch (Exception e) {
@@ -398,6 +364,113 @@ public class Main {
 		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		frame.setVisible(true);
 		log.info("Main window is visible");
+	}
+
+	private static void applyMacWindowAppearance(boolean dark) {
+		System.setProperty("apple.awt.application.appearance", dark ? "NSAppearanceNameDarkAqua" : "NSAppearanceNameAqua");
+	}
+
+	private static void applyDarkBackgroundPalette() {
+		java.awt.Color darkerBg = new java.awt.Color(0x1E1E1E);
+		java.awt.Color darkerBg2 = new java.awt.Color(0x252525);
+		javax.swing.UIManager.put("Panel.background", darkerBg);
+		javax.swing.UIManager.put("List.background", darkerBg2);
+		javax.swing.UIManager.put("Tree.background", darkerBg2);
+		javax.swing.UIManager.put("Table.background", darkerBg2);
+		javax.swing.UIManager.put("TextArea.background", darkerBg2);
+		javax.swing.UIManager.put("TextField.background", darkerBg2);
+		javax.swing.UIManager.put("ScrollPane.background", darkerBg);
+	}
+
+	private static boolean isSystemDarkThemeEnabled() {
+		if (com.formdev.flatlaf.util.SystemInfo.isMacOS) {
+			return isMacDarkThemeEnabled();
+		}
+		if (com.formdev.flatlaf.util.SystemInfo.isWindows) {
+			return isWindowsDarkThemeEnabled();
+		}
+		if (com.formdev.flatlaf.util.SystemInfo.isLinux) {
+			return isLinuxDarkThemeEnabled();
+		}
+		return false;
+	}
+
+	private static boolean isMacDarkThemeEnabled() {
+		Integer exit = executeCommandExitCode("defaults", "read", "-g", "AppleInterfaceStyle");
+		return exit != null && exit == 0;
+	}
+
+	private static boolean isWindowsDarkThemeEnabled() {
+		String output = executeCommandOutput("reg", "query", "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize", "/v", "AppsUseLightTheme");
+		if (output == null) {
+			return false;
+		}
+
+		Matcher m = Pattern.compile("AppsUseLightTheme\\s+REG_DWORD\\s+0x([0-9a-fA-F]+)").matcher(output);
+		if (m.find()) {
+			try {
+				return Integer.parseInt(m.group(1), 16) == 0;
+			} catch (NumberFormatException e) {
+				debug.log(Level.FINEST, "Failed to parse AppsUseLightTheme value", e);
+			}
+		}
+
+		return false;
+	}
+
+	private static boolean isLinuxDarkThemeEnabled() {
+		String gtkTheme = System.getenv("GTK_THEME");
+		if (gtkTheme != null && gtkTheme.toLowerCase(Locale.ROOT).contains("dark")) {
+			return true;
+		}
+
+		String colorScheme = executeCommandOutput("gsettings", "get", "org.gnome.desktop.interface", "color-scheme");
+		if (colorScheme != null && colorScheme.toLowerCase(Locale.ROOT).contains("prefer-dark")) {
+			return true;
+		}
+
+		String gnomeTheme = executeCommandOutput("gsettings", "get", "org.gnome.desktop.interface", "gtk-theme");
+		return gnomeTheme != null && gnomeTheme.toLowerCase(Locale.ROOT).contains("dark");
+	}
+
+	private static Integer executeCommandExitCode(String... command) {
+		try {
+			Process process = new ProcessBuilder(command).start();
+			boolean finished = process.waitFor(2, TimeUnit.SECONDS);
+			if (!finished) {
+				process.destroyForcibly();
+				return null;
+			}
+			return process.exitValue();
+		} catch (Exception e) {
+			return null;
+		}
+	}
+
+	private static String executeCommandOutput(String... command) {
+		try {
+			Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
+			boolean finished = process.waitFor(2, TimeUnit.SECONDS);
+			if (!finished) {
+				process.destroyForcibly();
+				return null;
+			}
+
+			StringBuilder output = new StringBuilder();
+			try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+				String line;
+				while ((line = reader.readLine()) != null) {
+					if (output.length() > 0) {
+						output.append('\n');
+					}
+					output.append(line);
+				}
+			}
+
+			return output.toString();
+		} catch (Exception e) {
+			return null;
+		}
 	}
 
 	/**

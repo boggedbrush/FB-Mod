@@ -57,26 +57,25 @@ jobs:
       - name: Smoke CLI
         run: ./scripts/smoke.sh
 
-      - name: Build Linux package
+      - name: Download appimagetool
         run: |
-          ANT_BIN="$(command -v ant || true)"
-          if [[ -z "$ANT_BIN" ]]; then
-            ANT_BIN="$(find .tools -maxdepth 4 -type f -path '*/bin/ant' | head -n 1)"
-          fi
-          if [[ -z "$ANT_BIN" ]]; then
-            echo "Unable to find Ant binary on PATH or in .tools" >&2
-            exit 1
-          fi
+          mkdir -p .tools
+          curl -L "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" -o .tools/appimagetool.AppImage
+          chmod +x .tools/appimagetool.AppImage
 
-          echo "Using Ant at: $ANT_BIN"
-          "$ANT_BIN" tar
+      - name: Build Linux AppImage
+        env:
+          APPIMAGETOOL: .tools/appimagetool.AppImage
+          APPIMAGE_UPDATE_INFO: gh-releases-zsync|${{ github.repository_owner }}|${{ github.event.repository.name }}|latest|FileBot_*-x86_64.AppImage.zsync
+        run: ./scripts/build-appimage.sh
 
       - name: Upload package artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.artifact_prefix }}-linux
           path: |
-            dist/*portable.tar.xz
+            dist/*.AppImage
+            dist/*.AppImage.zsync
           if-no-files-found: error
 
       - name: Upload logs

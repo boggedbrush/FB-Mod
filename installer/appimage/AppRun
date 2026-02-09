@@ -1,0 +1,5 @@
+#!/bin/sh
+
+APPDIR="${APPDIR:-$(cd "$(dirname "$0")" && pwd)}"
+
+exec "$APPDIR/usr/share/filebot/filebot.sh" "$@"

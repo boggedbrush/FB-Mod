@@ -122,11 +122,26 @@ setup_ant() {
 
   local ant_home="$TOOLS_DIR/apache-ant-$ANT_VERSION"
   local archive="$TOOLS_DIR/apache-ant-$ANT_VERSION-bin.tar.gz"
-  local url="https://archive.apache.org/dist/ant/binaries/apache-ant-$ANT_VERSION-bin.tar.gz"
+  local -a urls=(
+    "https://archive.apache.org/dist/ant/binaries/apache-ant-$ANT_VERSION-bin.tar.gz"
+    "https://downloads.apache.org/ant/binaries/apache-ant-$ANT_VERSION-bin.tar.gz"
+    "https://dlcdn.apache.org/ant/binaries/apache-ant-$ANT_VERSION-bin.tar.gz"
+    "https://repo1.maven.org/maven2/org/apache/ant/apache-ant/$ANT_VERSION/apache-ant-$ANT_VERSION-bin.tar.gz"
+  )
 
   if [[ ! -d "$ant_home" ]]; then
     echo "Downloading Ant $ANT_VERSION"
-    curl -fsSL "$url" -o "$archive"
+    local fetched=0
+    for url in "${urls[@]}"; do
+      if curl -fsSL "$url" -o "$archive"; then
+        fetched=1
+        break
+      fi
+    done
+    if [[ "$fetched" != "1" ]]; then
+      echo "Failed to download Ant $ANT_VERSION from all mirrors." >&2
+      exit 1
+    fi
     tar -xzf "$archive" -C "$TOOLS_DIR"
   fi
 

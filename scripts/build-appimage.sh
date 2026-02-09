@@ -11,7 +11,7 @@ fi
 
 get_prop() {
   local key="$1"
-  rg -n "^${key}:" "$APP_PROPERTIES" | head -n 1 | cut -d: -f2- | xargs
+  grep -m1 -E "^${key}:" "$APP_PROPERTIES" | cut -d: -f2- | xargs
 }
 
 APP_NAME="$(get_prop "application.name")"

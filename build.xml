@@ -706,6 +706,56 @@
 		</tar>
 	</target>
 
+	<target name="appimage" depends="revision" description="Build Linux AppImage bundle">
+		<property name="dir.staging" location="${dir.dist}/appimage" />
+		<property name="dir.appdir" location="${dir.staging}/AppDir" />
+
+		<mkdir dir="${dir.appdir}/usr/share/filebot/jar" />
+
+		<copy-replace todir="${dir.appdir}">
+			<fileset dir="${dir.installer}/appimage" includes="AppRun filebot.desktop" />
+		</copy-replace>
+
+		<copy-replace todir="${dir.appdir}/usr/share/filebot">
+			<fileset dir="${dir.installer}/appimage" includes="filebot.sh" />
+		</copy-replace>
+
+		<copy file="${dir.installer}/icons/filebot.svg" todir="${dir.appdir}" />
+		<exec executable="ln" failonerror="yes">
+			<arg value="-sf" />
+			<arg value="filebot.svg" />
+			<arg value="${dir.appdir}/.DirIcon" />
+		</exec>
+
+		<copy todir="${dir.appdir}/usr/share/filebot/jar">
+			<fileset dir="${dir.dist}/lib" includes="*.jar" />
+		</copy>
+
+		<!-- include native libraries for all supported platforms -->
+		<copy todir="${dir.appdir}/usr/share/filebot/lib/Linux-armv7l">
+			<fileset dir="${dir.lib}/native/linux-armv7l" includes="*.so" />
+		</copy>
+		<copy todir="${dir.appdir}/usr/share/filebot/lib/Linux-aarch64">
+			<fileset dir="${dir.lib}/native/linux-armv8" includes="*.so" />
+		</copy>
+		<copy todir="${dir.appdir}/usr/share/filebot/lib/Linux-i686">
+			<fileset dir="${dir.lib}/native/linux-i686" includes="*.so" />
+		</copy>
+		<copy todir="${dir.appdir}/usr/share/filebot/lib/Linux-x86_64">
+			<fileset dir="${dir.lib}/native/linux-amd64" includes="*.so" />
+		</copy>
+		<copy todir="${dir.appdir}/usr/share/filebot/lib/FreeBSD-amd64">
+			<fileset dir="${dir.lib}/native/freebsd-amd64" includes="*.so" />
+		</copy>
+
+		<chmod perm="+x" verbose="yes">
+			<fileset dir="${dir.appdir}">
+				<include name="AppRun" />
+				<include name="usr/share/filebot/filebot.sh" />
+			</fileset>
+		</chmod>
+	</target>
+
 
 	<target name="aur" depends="revision" description="Build Arch Linux TAR package for AUR">
 		<property name="dir.staging" location="${dir.dist}/aur" />
@@ -843,9 +893,17 @@
 
 
 	<target name="revision" depends="init">
-		<exec executable="git" outputproperty="revision" failonerror="true">
-			<arg line="rev-list --count master" />
+		<exec executable="git" outputproperty="revision" failonerror="false">
+			<arg line="rev-list --count HEAD" />
 		</exec>
+		<condition property="revision" value="0">
+			<or>
+				<not>
+					<isset property="revision" />
+				</not>
+				<equals arg1="${revision}" arg2="" />
+			</or>
+		</condition>
 		<echo>Revision: ${revision}</echo>
 	</target>
 

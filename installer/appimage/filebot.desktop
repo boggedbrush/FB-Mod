@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=@{application.name}
+Comment=@{package.synopsis}
+MimeType=@{deb.application.mimetype}
+Exec=AppRun %F
+Icon=filebot
+Categories=Utility;FileTools;
+StartupNotify=true
+StartupWMClass=@{deb.application.class}

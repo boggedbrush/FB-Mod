@@ -57,26 +57,24 @@ jobs:
       - name: Smoke CLI
         run: ./scripts/smoke.sh
 
-      - name: Build Linux package
-        run: |
-          ANT_BIN="$(command -v ant || true)"
-          if [[ -z "$ANT_BIN" ]]; then
-            ANT_BIN="$(find .tools -maxdepth 4 -type f -path '*/bin/ant' | head -n 1)"
-          fi
-          if [[ -z "$ANT_BIN" ]]; then
-            echo "Unable to find Ant binary on PATH or in .tools" >&2
-            exit 1
-          fi
+      - name: Cache linuxdeploy toolchain
+        uses: actions/cache@v4
+        with:
+          path: build/linuxdeploy-tools
+          key: linuxdeploy-${{ runner.os }}
 
-          echo "Using Ant at: $ANT_BIN"
-          "$ANT_BIN" tar
+      - name: Build Linux AppImage
+        env:
+          APPIMAGE_UPDATE_INFO: gh-releases-zsync|${{ github.repository_owner }}|${{ github.event.repository.name }}|latest|FileBot_*-x86_64.AppImage.zsync
+        run: ./scripts/build-appimage.sh
 
       - name: Upload package artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.artifact_prefix }}-linux
           path: |
-            dist/*portable.tar.xz
+            dist/*.AppImage
+            dist/*.AppImage.zsync
           if-no-files-found: error
 
       - name: Upload logs

@@ -17,7 +17,22 @@ get_prop() {
 APP_NAME="$(get_prop "application.name")"
 APP_VERSION="$(get_prop "application.version")"
 RELEASE="${APP_NAME}_${APP_VERSION}"
-ARCH="$(uname -m)"
+RAW_ARCH="$(uname -m)"
+APPIMAGE_ARCH="$RAW_ARCH"
+case "$RAW_ARCH" in
+  x86_64 | amd64)
+    APPIMAGE_ARCH="x86_64"
+    ;;
+  i386 | i486 | i586 | i686)
+    APPIMAGE_ARCH="i686"
+    ;;
+  aarch64 | arm64)
+    APPIMAGE_ARCH="aarch64"
+    ;;
+  armv6l | armv7l | armv7)
+    APPIMAGE_ARCH="armhf"
+    ;;
+esac
 
 ANT_BIN="${ANT_BIN:-}"
 if [[ -z "$ANT_BIN" ]]; then
@@ -54,11 +69,12 @@ if [[ -z "$APPIMAGETOOL" ]]; then
   exit 1
 fi
 
-OUTPUT="$ROOT_DIR/dist/${RELEASE}-${ARCH}.AppImage"
+OUTPUT="$ROOT_DIR/dist/${RELEASE}-${APPIMAGE_ARCH}.AppImage"
 UPDATE_INFO="${APPIMAGE_UPDATE_INFO:-}"
 
 export APPIMAGE_EXTRACT_AND_RUN=1
 export APPIMAGETOOL_EXTRACT_AND_RUN=1
+export ARCH="$APPIMAGE_ARCH"
 
 if [[ -n "$UPDATE_INFO" ]]; then
   "$APPIMAGETOOL" --updateinformation "$UPDATE_INFO" "$APPDIR" "$OUTPUT"

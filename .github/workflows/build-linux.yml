@@ -74,8 +74,8 @@ jobs:
         with:
           name: ${{ inputs.artifact_prefix }}-linux
           path: |
-            dist/*.AppImage
-            dist/*.AppImage.zsync
+            dist/appimage/*.AppImage
+            dist/appimage/*.AppImage.zsync
           if-no-files-found: error
 
       - name: Upload logs

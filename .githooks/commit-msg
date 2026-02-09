@@ -1,0 +1,47 @@
+#!/bin/sh
+
+set -eu
+
+msg_file="$1"
+tmp_file="$(mktemp)"
+trap 'rm -f "$tmp_file"' EXIT
+sed '/^[[:space:]]*#/d' "$msg_file" > "$tmp_file"
+
+subject="$(sed -n '1p' "$tmp_file")"
+
+if [ -z "$subject" ]; then
+  echo "ERROR: Commit message subject cannot be empty." >&2
+  exit 1
+fi
+
+if printf '%s' "$subject" | grep -Eq '^(Merge|Revert) '; then
+  exit 0
+fi
+
+if ! printf '%s' "$subject" | grep -Eq '^(feat|fix|docs|style|refactor|test|chore): .+'; then
+  echo "ERROR: Commit subject must match '<type>: <summary>'." >&2
+  echo "Allowed types: feat, fix, docs, style, refactor, test, chore" >&2
+  exit 1
+fi
+
+subject_len="$(printf '%s' "$subject" | wc -c | tr -d ' ')"
+if [ "$subject_len" -gt 50 ]; then
+  echo "ERROR: Commit subject exceeds 50 characters ($subject_len)." >&2
+  exit 1
+fi
+
+line_count="$(wc -l < "$tmp_file" | tr -d ' ')"
+if [ "$line_count" -gt 1 ]; then
+  second_line="$(sed -n '2p' "$tmp_file")"
+  if [ -n "$second_line" ]; then
+    echo "ERROR: Leave a blank line between subject and body." >&2
+    exit 1
+  fi
+fi
+
+if awk 'NR >= 3 && length($0) > 72 { exit 1 }' "$tmp_file"; then
+  :
+else
+  echo "ERROR: Commit body lines must be 72 characters or less." >&2
+  exit 1
+fi

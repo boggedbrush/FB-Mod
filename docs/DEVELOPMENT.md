@@ -81,3 +81,15 @@ Run with local mirror:
 ```bash
 java -cp "dist/lib/*" net.filebot.Main --data-source ./mirror -version
 ```
+
+## Commit Messages
+Use the commit policy in:
+
+- `docs/COMMIT_GUIDELINES.md`
+
+Recommended local enforcement:
+
+```bash
+git config core.hooksPath .githooks
+chmod +x .githooks/commit-msg
+```

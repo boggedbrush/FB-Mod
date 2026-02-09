@@ -30,4 +30,6 @@ Create and use a local mirror to avoid upstream runtime dependency:
 
 ## Documentation
 - Build / tooling / smoke docs: `docs/DEVELOPMENT.md`
+- Commit message rules: `docs/COMMIT_GUIDELINES.md`
 - Legacy compile notes: `COMPILING.md`
+- Contributor / agent instructions: `AGENTS.md`

@@ -65,6 +65,7 @@ chmod +x "$TOOLS_DIR"/linuxdeploy-*.AppImage
 
 export PATH="$TOOLS_DIR:$PATH"
 export APPIMAGE_EXTRACT_AND_RUN=1
+export ARCH="${ARCH:-x86_64}"
 
 UPDATE_INFO="${APPIMAGE_UPDATE_INFO:-}"
 if [[ -n "$UPDATE_INFO" ]]; then
